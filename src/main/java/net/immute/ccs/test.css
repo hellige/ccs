@@ -1,0 +1,45 @@
+*:root { root: "worked" }
+
+body#doit { type: "hi"; foo: "bar" }
+
+body em { foo: "hi" }
+baz { foo: "there" }
+baz em { foo: "!" }
+
+*[type="hi"][foo="bar"] baz em { foo: "ARGH" }
+
+baz[root="worked"] { rootTest: "WTF" }
+
+
+*:root { childTest: a }
+em#foo > baz { childTest: b }
+em > baz { childTest: c }
+* bar > baz { childTest: d }
+
+*:root { classTest: a }
+em.foo > baz { classTest: b }
+
+
+dbConnPool {
+  maxConnections: 5;
+  minConnections: 1;
+  initConnections: 2;
+}
+
+dbConnPool#orders {
+  name: "Purchase Order DB";
+  url: "jdbc:oracle:thin:@db.ex.com:1521:podb";
+}
+
+dbConnPool#users {
+  name: "User Account DB";
+  url: "jdbc:oracle:thin:@db.ex.com:1521:userdb";
+}
+
+dbConnPool#products {
+  name: "Product DB";
+  url: "jdbc:oracle:thin:@db.ex.com:1521:proddb";
+  maxConnections: 20;
+  initConnections: 10;
+}
+
