@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/src/main/ccs.iml" filepath="$PROJECT_DIR$/src/main/ccs.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ccs.iml" filepath="$PROJECT_DIR$/ccs.iml" />
     </modules>
   </component>
 </project>
