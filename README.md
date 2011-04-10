@@ -1,5 +1,6 @@
 CCS is, basically, a config file format and library for configuring programs
-for the JVM.
+for the JVM. It's inspired by CSS and has similar syntax, but is different in
+a number of important ways and is certainly a distinct language.
 
 Philosophy
 ----------
@@ -47,3 +48,8 @@ configuration:
   - It's less suited to basing *everything* on the structure of the tree. In
     part, this is due to the fact that the tree itself specifies sources for
     annotations.
+  - No nested rulesets.
+  - CSS doesn't separate the pure tree annotation semantics from the
+    particular task of styling documents. This is a shame in many ways,
+    because to my knowledge the more general question of tree annotation has
+    not received the attention it deserves.
