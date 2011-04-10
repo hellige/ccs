@@ -13,8 +13,8 @@ compile:
 
 test: compile
 	rm -rf classes/test
-	mkdir -p classes/test
-	javac -classpath $(CLASSPATH) -d classes/test $(TEST_SRCS)
+	cp -r src/test/resources classes/test
+	javac -classpath $(CLASSPATH):classes/main -d classes/test $(TEST_SRCS)
 	java -classpath $(CLASSPATH):classes/main:classes/test org.junit.runner.JUnitCore $(TEST_CLASSES)
 
 dist/ccs.jar: compile test
@@ -23,6 +23,7 @@ dist/ccs.jar: compile test
 	jar cvf $@ -C classes/main .
 
 clean:
+	rm -rf out
 	rm -rf dist
 	rm -rf classes
 
