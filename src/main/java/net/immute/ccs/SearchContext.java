@@ -2,7 +2,7 @@ package net.immute.ccs;
 
 import java.util.*;
 
-import net.immute.ccs.tree.CCSNode;
+import net.immute.ccs.tree.Node;
 import net.immute.ccs.tree.Key;
 
 import static java.util.Collections.reverseOrder;
@@ -12,22 +12,22 @@ public class SearchContext {
     private final SearchContext parent;
     private final Key key;
 
-    private List<List<CCSNode>> nodeList;
+    private List<List<Node>> nodeList;
 
-    private static final Comparator<CCSProperty> PROP_COMPARATOR =
-        new Comparator<CCSProperty>() {
-            public int compare(CCSProperty p1, CCSProperty p2) {
+    private static final Comparator<CcsProperty> PROP_COMPARATOR =
+        new Comparator<CcsProperty>() {
+            public int compare(CcsProperty p1, CcsProperty p2) {
                 return p1.getPropertyNumber() - p2.getPropertyNumber();
             }
         };
 
-    private SearchContext(CCSNode root) {
+    private SearchContext(Node root) {
         nodeList = singletonList(singletonList(root));
         parent = null;
         key = null;
     }
 
-    public SearchContext(CCSNode root, String element) {
+    public SearchContext(Node root, String element) {
         parent = new SearchContext(root);
         key = new Key(element);
         key.setRoot(true);
@@ -55,17 +55,17 @@ public class SearchContext {
         return findProperty(propertyName, true).getValue();
     }
 
-    private CCSProperty findProperty(String propertyName, boolean locals) {
+    private CcsProperty findProperty(String propertyName, boolean locals) {
         // first, look in nodes newly matched by this pattern...
-        for (List<CCSNode> ns : getNodes()) {
-            List<CCSProperty> values = new ArrayList<CCSProperty>();
-            for (CCSNode n : ns)
+        for (List<Node> ns : getNodes()) {
+            List<CcsProperty> values = new ArrayList<CcsProperty>();
+            for (Node n : ns)
                 values.addAll(n.getProperty(propertyName, locals));
             if (values.size() == 1)
                 return values.get(0);
             else if (values.size() > 1) {
                 // TODO make warning optional and add info about conflicting settings
-                CCSLogger.warn("Relying on declaration order to resolve ambiguity. Are you sure you want this?");
+                CcsLogger.warn("Relying on declaration order to resolve ambiguity. Are you sure you want this?");
                 return Collections.max(values, PROP_COMPARATOR);
             }
         }
@@ -79,22 +79,22 @@ public class SearchContext {
         throw new NoSuchPropertyException(propertyName);
     }
 
-    private List<List<CCSNode>> getNodes() {
+    private List<List<Node>> getNodes() {
         if (nodeList == null) {
-            SortedMap<Specificity, List<List<CCSNode>>> buckets =
-                    new TreeMap<Specificity, List<List<CCSNode>>>(reverseOrder());
+            SortedMap<Specificity, List<List<Node>>> buckets =
+                    new TreeMap<Specificity, List<List<Node>>>(reverseOrder());
             boolean includeDirectChildren = true;
             SearchContext p = parent;
             while (p != null) {
-                for (List<CCSNode> ns : p.getNodes()) {
-                    SortedMap<Specificity, List<CCSNode>> results =
-                            new TreeMap<Specificity, List<CCSNode>>(reverseOrder());
-                    for (CCSNode n : ns)
+                for (List<Node> ns : p.getNodes()) {
+                    SortedMap<Specificity, List<Node>> results =
+                            new TreeMap<Specificity, List<Node>>(reverseOrder());
+                    for (Node n : ns)
                         n.getChildren(key, parent, includeDirectChildren, results);
                     for (Specificity spec : results.keySet()) {
-                        List<List<CCSNode>> bucket = buckets.get(spec);
+                        List<List<Node>> bucket = buckets.get(spec);
                         if (bucket == null) {
-                            bucket = new ArrayList<List<CCSNode>>();
+                            bucket = new ArrayList<List<Node>>();
                             buckets.put(spec, bucket);
                         }
                         bucket.add(results.get(spec));
@@ -103,8 +103,8 @@ public class SearchContext {
                 includeDirectChildren = false;
                 p = p.parent;
             }
-            nodeList = new ArrayList<List<CCSNode>>();
-            for (List<List<CCSNode>> nss : buckets.values())
+            nodeList = new ArrayList<List<Node>>();
+            for (List<List<Node>> nss : buckets.values())
                 nodeList.addAll(nss);
         }
         return nodeList;

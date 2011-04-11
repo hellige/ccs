@@ -1,6 +1,6 @@
 package net.immute.ccs;
 
-public abstract class CCSLogger {
+public abstract class CcsLogger {
     public static void warn(String msg) {
         System.err.println("WARN: " + msg);
     }

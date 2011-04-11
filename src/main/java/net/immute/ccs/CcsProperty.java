@@ -1,11 +1,11 @@
 package net.immute.ccs;
 
-public class CCSProperty {
+public class CcsProperty {
     private final String value;
     private final Origin origin;
     private final int propertyNumber;
 
-    public CCSProperty(String value, Origin origin, int propertyNumber) {
+    public CcsProperty(String value, Origin origin, int propertyNumber) {
         this.value = value;
         this.origin = origin;
         this.propertyNumber = propertyNumber;

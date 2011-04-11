@@ -1,26 +1,26 @@
 package net.immute.ccs.parser;
 
-import net.immute.ccs.CCSLogger;
-import net.immute.ccs.CCSProperty;
+import net.immute.ccs.CcsLogger;
+import net.immute.ccs.CcsProperty;
 import net.immute.ccs.Origin;
-import net.immute.ccs.tree.CCSNode;
+import net.immute.ccs.tree.Node;
 import net.immute.ccs.tree.Key;
 import org.w3c.css.sac.*;
 
 import java.io.LineNumberReader;
 import java.util.Stack;
 
-public class CCSDocumentHandler implements DocumentHandler {
-    private final CCSNode rootNode;
+public class CcsDocumentHandler implements DocumentHandler {
+    private final Node rootNode;
     private final String fileName;
     private final LineNumberReader reader;
 
     private SelectorList currentSelector = null;
-    private CCSNode currentNode = null;
+    private Node currentNode = null;
     private int propertyNumber = 1;
 
-    public CCSDocumentHandler(CCSNode rootNode, String fileName,
-        LineNumberReader reader) {
+    public CcsDocumentHandler(Node rootNode, String fileName,
+                              LineNumberReader reader) {
         this.rootNode = rootNode;
         this.fileName = fileName;
         this.reader = reader;
@@ -33,15 +33,15 @@ public class CCSDocumentHandler implements DocumentHandler {
     public void endDocument(InputSource arg0) throws CSSException {}
 
     public void endFontFace() throws CSSException {
-        CCSLogger.error("not implemented: endFontFace()");
+        CcsLogger.error("not implemented: endFontFace()");
     }
 
     public void endMedia(SACMediaList arg0) throws CSSException {
-        CCSLogger.error("not implemented: endMedia()");
+        CcsLogger.error("not implemented: endMedia()");
     }
 
     public void endPage(String arg0, String arg1) throws CSSException {
-        CCSLogger.error("not implemented: endPage()");
+        CcsLogger.error("not implemented: endPage()");
     }
 
     public void endSelector(SelectorList arg0) throws CSSException {
@@ -60,7 +60,7 @@ public class CCSDocumentHandler implements DocumentHandler {
 
     public void namespaceDeclaration(String arg0, String arg1)
         throws CSSException {
-        CCSLogger.error("not implemented: namespaceDeclaration()");
+        CcsLogger.error("not implemented: namespaceDeclaration()");
     }
 
     public void property(String name, LexicalUnit value, boolean important)
@@ -70,8 +70,8 @@ public class CCSDocumentHandler implements DocumentHandler {
         if (currentNode == null) {
             currentNode = rootNode;
             if (currentSelector.getLength() != 1) {
-                CCSLogger.error("unhandled selector length: "
-                    + currentSelector.getLength());
+                CcsLogger.error("unhandled selector length: "
+                        + currentSelector.getLength());
             }
             Selector s = currentSelector.item(0);
             Stack<Key> selectors = new Stack<Key>();
@@ -97,9 +97,9 @@ public class CCSDocumentHandler implements DocumentHandler {
             // then build our nodes...
             while (!selectors.isEmpty()) {
                 Key key = selectors.pop();
-                CCSNode tmpNode = currentNode.getChild(key);
+                Node tmpNode = currentNode.getChild(key);
                 if (tmpNode == null) {
-                    tmpNode = new CCSNode();
+                    tmpNode = new Node();
                     currentNode.addChild(key, tmpNode);
                 }
                 currentNode = tmpNode;
@@ -108,8 +108,8 @@ public class CCSDocumentHandler implements DocumentHandler {
 
         // then set the property...
         // TODO the origin line number here is broken. i'm guessing flute's looking ahead...
-        CCSProperty property =
-            new CCSProperty(value.getStringValue(), new Origin(fileName, reader
+        CcsProperty property =
+            new CcsProperty(value.getStringValue(), new Origin(fileName, reader
                 .getLineNumber()), propertyNumber);
         currentNode.addProperty(name, property, false);
         propertyNumber++;
@@ -179,15 +179,15 @@ public class CCSDocumentHandler implements DocumentHandler {
     public void startDocument(InputSource source) throws CSSException {}
 
     public void startFontFace() throws CSSException {
-        CCSLogger.error("not implemented: startFontFace()");
+        CcsLogger.error("not implemented: startFontFace()");
     }
 
     public void startMedia(SACMediaList arg0) throws CSSException {
-        CCSLogger.error("not implemented: startMedia()");
+        CcsLogger.error("not implemented: startMedia()");
     }
 
     public void startPage(String arg0, String arg1) throws CSSException {
-        CCSLogger.error("not implemented: startPage()");
+        CcsLogger.error("not implemented: startPage()");
     }
 
     public void startSelector(SelectorList selector) throws CSSException {
