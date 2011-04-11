@@ -111,6 +111,20 @@ public class Key {
     }
 
     @Override
+    public String toString() {
+        StringBuilder result = new StringBuilder();
+        if (element != null)
+            result.append(element);
+        else
+            result.append("*");
+        if (root) result.append(":root");
+        if (id != null) result.append("#").append(id);
+        for (String c : classes) result.append(".").append(c);
+        for (String a : attributes.keySet()) result.append("[").append(a).append("=").append(attributes.get(a));
+        return result.toString();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

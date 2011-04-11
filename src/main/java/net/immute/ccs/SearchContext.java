@@ -52,7 +52,9 @@ public class SearchContext {
     }
 
     public String getProperty(String propertyName) {
-        return findProperty(propertyName, true).getValue();
+        CcsProperty prop = findProperty(propertyName, true);
+        if (prop == null) throw new NoSuchPropertyException(propertyName, this);
+        return prop.getValue();
     }
 
     private CcsProperty findProperty(String propertyName, boolean locals) {
@@ -75,8 +77,7 @@ public class SearchContext {
             return parent.findProperty(propertyName, false);
         }
 
-        // if still not, then die...
-        throw new NoSuchPropertyException(propertyName);
+        return null;
     }
 
     private List<List<Node>> getNodes() {
@@ -108,5 +109,17 @@ public class SearchContext {
                 nodeList.addAll(nss);
         }
         return nodeList;
+    }
+
+    @Override
+    public String toString() {
+        if (parent != null) {
+            if (parent.parent != null)
+                return parent + " > " + key;
+            else
+                return key.toString();
+        } else {
+            return "<root>";
+        }
     }
 }
