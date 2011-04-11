@@ -1,0 +1,19 @@
+.class2 {
+    test1: "incorrect"
+}
+
+.class1 {
+    test1: "correct"
+}
+
+.class1 foo {
+    test2: "incorrect 1"
+}
+
+.class2 foo {
+    test2: "correct"
+}
+
+bar foo {
+    test2: "incorrect 2"
+}

@@ -25,7 +25,7 @@ dist/ccs.jar: compile test
 	(cd classes/tmp && jar xf ../../lib/sac.jar)
 	(cd classes/tmp && jar xf ../../lib/flute.jar)
 	rm -rf classes/tmp/META-INF
-	jar cvf classes/tmp.jar -C classes/tmp .
+	jar cf classes/tmp.jar -C classes/tmp .
 	java -jar lib/jarjar-1.1.jar process jarjar.spec classes/tmp.jar $@
 	rm classes/tmp.jar
 

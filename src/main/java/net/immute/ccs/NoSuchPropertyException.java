@@ -1,7 +1,7 @@
 package net.immute.ccs;
 
 public class NoSuchPropertyException extends RuntimeException {
-    private String propertyName;
+    private final String propertyName;
 
     public NoSuchPropertyException(String propertyName) {
         this.propertyName = propertyName;

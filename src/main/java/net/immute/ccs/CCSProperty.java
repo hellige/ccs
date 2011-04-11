@@ -1,20 +1,14 @@
 package net.immute.ccs;
 
 public class CCSProperty {
-    private String value;
+    private final String value;
+    private final Origin origin;
+    private final int propertyNumber;
 
-    private Origin origin;
-
-    private int propertyNumber;
-
-    private Specificity specificity;
-
-    public CCSProperty(String value, Origin origin, int propertyNumber,
-        Specificity specificity) {
+    public CCSProperty(String value, Origin origin, int propertyNumber) {
         this.value = value;
         this.origin = origin;
         this.propertyNumber = propertyNumber;
-        this.specificity = specificity;
     }
 
     public String getValue() {
@@ -29,12 +23,8 @@ public class CCSProperty {
         return propertyNumber;
     }
 
-    public Specificity getSpecificity() {
-        return specificity;
-    }
-
     public String toString() {
         return "{value: " + value + ", number: " + propertyNumber
-            + ", specificity: " + specificity + ", origin: " + origin + "}";
+            + ", origin: " + origin + "}";
     }
 }

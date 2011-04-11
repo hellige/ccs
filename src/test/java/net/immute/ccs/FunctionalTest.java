@@ -2,11 +2,9 @@ package net.immute.ccs;
 
 import net.immute.ccs.parser.Loader;
 import net.immute.ccs.tree.CCSNode;
-import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class FunctionalTest {
     @Test

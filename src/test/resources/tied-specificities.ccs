@@ -1,0 +1,7 @@
+.class2 {
+    test: "foo"
+}
+
+.class1 {
+    test: "correct"
+}

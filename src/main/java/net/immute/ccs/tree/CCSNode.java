@@ -1,20 +1,19 @@
 package net.immute.ccs.tree;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import net.immute.ccs.CCSLogger;
 import net.immute.ccs.CCSProperty;
 import net.immute.ccs.SearchContext;
+import net.immute.ccs.Specificity;
+
+import static java.util.Collections.emptyList;
 
 public class CCSNode {
-    protected HashMap<Key, CCSNode> children = new HashMap<Key, CCSNode>();
-
-    protected HashMap<String, List<CCSProperty>> props =
+    private final HashMap<Key, CCSNode> children = new HashMap<Key, CCSNode>();
+    private final HashMap<String, List<CCSProperty>> props =
         new HashMap<String, List<CCSProperty>>();
-
-    protected HashMap<String, List<CCSProperty>> localProps =
+    private final HashMap<String, List<CCSProperty>> localProps =
         new HashMap<String, List<CCSProperty>>();
 
     public CCSNode getChild(Key key) {
@@ -25,15 +24,18 @@ public class CCSNode {
         children.put(key, child);
     }
 
-    public List<CCSNode> getChildren(Key key, SearchContext sc,
-        boolean includeDirectChildren) {
-        List<CCSNode> matches = new ArrayList<CCSNode>();
+    public void getChildren(Key key, SearchContext sc, boolean includeDirectChildren,
+                            SortedMap<Specificity, List<CCSNode>> results) {
         for (Key pattern : children.keySet()) {
             if (pattern.matches(key, sc, includeDirectChildren)) {
-                matches.add(getChild(pattern));
+                List<CCSNode> nodes = results.get(pattern.getSpecificity());
+                if (nodes == null) {
+                    nodes = new ArrayList<CCSNode>();
+                    results.put(pattern.getSpecificity(), nodes);
+                }
+                nodes.add(getChild(pattern));
             }
         }
-        return matches;
     }
 
     public List<CCSProperty> getProperty(String name, boolean locals) {
@@ -43,6 +45,9 @@ public class CCSNode {
         }
         if (values == null) {
             values = props.get(name);
+        }
+        if (values == null) {
+            values = emptyList();
         }
         return values;
     }
@@ -57,15 +62,10 @@ public class CCSNode {
             theProps.put(name, values);
         } else {
             CCSLogger.warn("Conflict detected for property: " + name
-                + ". Last set at: " + values.get(0).getOrigin()
+                + ". Last set at: " + values.get(values.size()-1).getOrigin()
                 + ". New setting at: " + value.getOrigin()
                 + ". Using new value.");
         }
         values.add(value);
     }
-
-    public boolean isEmpty() {
-        return (props.isEmpty() && localProps.isEmpty() && children.isEmpty());
-    }
-
 }

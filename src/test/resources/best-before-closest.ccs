@@ -1,0 +1,7 @@
+second#id {
+    test: "correct"
+}
+
+first second {
+    test: "incorrect"
+}

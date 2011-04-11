@@ -7,31 +7,38 @@ import java.util.Set;
 
 import net.immute.ccs.NoSuchPropertyException;
 import net.immute.ccs.SearchContext;
+import net.immute.ccs.Specificity;
 
 public class Key {
-    String element;
+    private final String element;
+    private final Map<String, String> attributes = new HashMap<String, String>();
+    private final Set<String> classes = new HashSet<String>();
+    private final Specificity specificity = new Specificity();
 
-    String id;
-
-    boolean root;
-
-    boolean directChild;
-
-    Map<String, String> attributes = new HashMap<String, String>();
-
-    Set<String> classes = new HashSet<String>();
+    private String id;
+    private boolean root;
+    private boolean directChild;
 
     public Key(String element, String... classes) {
         this.element = element;
         root = false;
         directChild = false;
+        if (element != null) {
+            specificity.incElementNames();
+        }
         for (String cls : classes) {
             this.classes.add(cls);
+            specificity.incClassSelectors();
         }
+    }
+
+    public Specificity getSpecificity() {
+        return specificity;
     }
 
     public void setId(String id) {
         this.id = id;
+        specificity.incIdSelectors();
     }
 
     public void setDirectChild(boolean directChild) {
@@ -40,18 +47,17 @@ public class Key {
 
     public void setRoot(boolean root) {
         this.root = root;
+        specificity.incClassSelectors();
     }
 
     public void setAttribute(String key, String value) {
         attributes.put(key, value);
-    }
-
-    public String getAttribute(String key) {
-        return attributes.get(key);
+        specificity.incClassSelectors();
     }
 
     public void addClass(String cls) {
         classes.add(cls);
+        specificity.incClassSelectors();
     }
 
     /**
@@ -60,6 +66,10 @@ public class Key {
      * attributes, but the current object must fully match the key. wildcards
      * also match on the current object, but not on the given key.
      * @param k the key to test against.
+     * @param sc the context to use for "attribute" queries
+     * @param includeDirectChildren whether the incoming key represents a single
+     *  step from the parent node. i.e., should a direct-child constraint on this
+     *  key succeed or fail?
      * @return true if this object, as a pattern, matches the given key.
      */
     public boolean matches(Key k, SearchContext sc,
@@ -100,44 +110,31 @@ public class Key {
         return true;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
     @Override
-    public int hashCode() {
-        final int PRIME = 31;
-        int result = 1;
-        result =
-            PRIME * result + ((attributes == null) ? 0 : attributes.hashCode());
-        result = PRIME * result + ((element == null) ? 0 : element.hashCode());
-        result = PRIME * result + ((id == null) ? 0 : id.hashCode());
-        result = PRIME * result + (root ? 1231 : 1237);
-        result = PRIME * result + (directChild ? 1231 : 1237);
-        return result;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Key key = (Key) o;
+
+        if (directChild != key.directChild) return false;
+        if (root != key.root) return false;
+        if (attributes != null ? !attributes.equals(key.attributes) : key.attributes != null) return false;
+        if (classes != null ? !classes.equals(key.classes) : key.classes != null) return false;
+        if (element != null ? !element.equals(key.element) : key.element != null) return false;
+        if (id != null ? !id.equals(key.id) : key.id != null) return false;
+
+        return true;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!super.equals(obj)) return false;
-        if (getClass() != obj.getClass()) return false;
-        final Key other = (Key) obj;
-        if (attributes == null) {
-            if (other.attributes != null) return false;
-        } else if (!attributes.equals(other.attributes)) return false;
-        if (element == null) {
-            if (other.element != null) return false;
-        } else if (!element.equals(other.element)) return false;
-        if (id == null) {
-            if (other.id != null) return false;
-        } else if (!id.equals(other.id)) return false;
-        if (root != other.root) return false;
-        if (directChild != other.directChild) return false;
-        return true;
+    public int hashCode() {
+        int result = element != null ? element.hashCode() : 0;
+        result = 31 * result + (attributes != null ? attributes.hashCode() : 0);
+        result = 31 * result + (classes != null ? classes.hashCode() : 0);
+        result = 31 * result + (id != null ? id.hashCode() : 0);
+        result = 31 * result + (root ? 1 : 0);
+        result = 31 * result + (directChild ? 1 : 0);
+        return result;
     }
 }

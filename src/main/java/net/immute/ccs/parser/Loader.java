@@ -28,9 +28,7 @@ public class Loader {
         parser
             .setDocumentHandler(new CCSDocumentHandler(root, fileName, reader));
         parser.parseStyleSheet(source);
-
         reader.close();
-
         return root;
     }
 }
