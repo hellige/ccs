@@ -22,7 +22,7 @@ public class NewRulesTest {
         SearchContext c = new SearchContext(root, "first");
         c = new SearchContext(c, "second");
         c = new SearchContext(c, "third");
-        assertEquals("correct", c.getProperty("test"));
+        assertEquals("correct", c.getString("test"));
     }
 
     @Test
@@ -30,7 +30,7 @@ public class NewRulesTest {
         Node root = load("best-before-closest.ccs");
         SearchContext c = new SearchContext(root, "first");
         c = new SearchContext(c, "second", "id");
-        assertEquals("correct", c.getProperty("test"));
+        assertEquals("correct", c.getString("test"));
     }
 
     @Test
@@ -38,7 +38,7 @@ public class NewRulesTest {
         Node root = load("tied-specificities.ccs");
         SearchContext c = new SearchContext(root, "first");
         c = new SearchContext(c, "second", null, "class1", "class2");
-        assertEquals("correct", c.getProperty("test"));
+        assertEquals("correct", c.getString("test"));
     }
 
     @Test
@@ -46,8 +46,8 @@ public class NewRulesTest {
         Node root = load("complex-tie.ccs");
         SearchContext c = new SearchContext(root, "root");
         c = new SearchContext(c, "bar", null, "class1", "class2");
-        assertEquals("correct", c.getProperty("test1"));
+        assertEquals("correct", c.getString("test1"));
         c = new SearchContext(c, "foo");
-        assertEquals("correct", c.getProperty("test2"));
+        assertEquals("correct", c.getString("test2"));
     }
 }

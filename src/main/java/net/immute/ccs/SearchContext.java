@@ -51,10 +51,61 @@ public class SearchContext {
         key.setId(id);
     }
 
-    public String getProperty(String propertyName) {
+    public String getKey() {
+        return key.toString();
+    }
+
+    public boolean hasProperty(String propertyName) {
+        return findProperty(propertyName, true) != null;
+    }
+
+    public CcsProperty getProperty(String propertyName) {
+        return findProperty(propertyName, true);
+    }
+
+    public String getString(String propertyName) {
         CcsProperty prop = findProperty(propertyName, true);
         if (prop == null) throw new NoSuchPropertyException(propertyName, this);
         return prop.getValue();
+    }
+
+    public String getString(String propertyName, String defaultValue) {
+        CcsProperty property = getProperty(propertyName);
+        String result = property == null ? defaultValue : property.getValue();
+        return result;
+    }
+
+    public int getInt(String propertyName) {
+        int result = Integer.parseInt(getString(propertyName));
+        return result;
+    }
+
+    public int getInt(String propertyName, int defaultValue) {
+        CcsProperty property = getProperty(propertyName);
+        int result = property == null ? defaultValue : Integer.parseInt(property.getValue());
+        return result;
+    }
+
+    public double getDouble(String propertyName) {
+        double result = Double.parseDouble(getString(propertyName));
+        return result;
+    }
+
+    public double getDouble(String propertyName, double defaultValue) {
+        CcsProperty property = getProperty(propertyName);
+        double result = property == null ? defaultValue : Double.parseDouble(property.getValue());
+        return result;
+    }
+
+    public boolean getBoolean(String propertyName) {
+        boolean result = Boolean.parseBoolean(getString(propertyName));
+        return result;
+    }
+
+    public boolean getBoolean(String propertyName, boolean defaultValue) {
+        CcsProperty property = getProperty(propertyName);
+        boolean result = property == null ? defaultValue : Boolean.parseBoolean(property.getValue());
+        return result;
     }
 
     private CcsProperty findProperty(String propertyName, boolean locals) {

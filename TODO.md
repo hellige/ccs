@@ -1,6 +1,5 @@
   - add important!: search upward important, then search upward normal
   - inherit vs. local, what's the right default?
-  - typed properties
   - merging sources into same tree
   - settings based on filename?
   - interpolation
@@ -11,3 +10,4 @@
   - eager vs lazy search (pre-compute all props for given context)
   - dump all prop values with origin (in priority order)
   - functional test framework (file-driven)
+  - C++-style single-line comments

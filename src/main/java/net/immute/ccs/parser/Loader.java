@@ -31,4 +31,8 @@ public class Loader {
         reader.close();
         return root;
     }
+
+    public Node loadEmpty() {
+        return new Node();
+    }
 }

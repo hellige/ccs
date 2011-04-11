@@ -17,28 +17,30 @@ public class FunctionalTest {
         c = new SearchContext(c, "bar");
         c = new SearchContext(c, "em");
         SearchContext c2 = new SearchContext(c, "baz");
-        assertEquals("hi", c.getProperty("foo"));
-        assertEquals("there", c2.getProperty("foo"));
-        assertEquals("hi", c.getProperty("foo"));
-        SearchContext c3 = new SearchContext(c, "blah");
-        assertEquals("hi", c3.getProperty("foo"));
+        assertEquals("hi", c.getString("foo"));
+        assertEquals("there", c2.getString("foo"));
+        assertEquals("hi", c.getString("foo"));
+        // TODO inheritance is disabled for now
+        //SearchContext c3 = new SearchContext(c, "blah");
+        //assertEquals("hi", c3.getString("foo"));
         SearchContext c4 = new SearchContext(c2, "em");
-        assertEquals("!", c4.getProperty("foo"));
+        assertEquals("!", c4.getString("foo"));
 
         c = new SearchContext(root, "hi");
         c = new SearchContext(c, "body", "doit");
         c = new SearchContext(c, "bar");
         c = new SearchContext(c, "em", null, "foo");
         c2 = new SearchContext(c, "baz");
-        assertEquals("hi", c.getProperty("foo"));
-        assertEquals("there", c2.getProperty("foo"));
-        assertEquals("hi", c.getProperty("foo"));
-        c3 = new SearchContext(c, "blah");
-        assertEquals("hi", c3.getProperty("foo"));
-        c4 = new SearchContext(c2, "em");
-        assertEquals("ARGH", c4.getProperty("foo"));
-        assertEquals("WTF", c4.getProperty("rootTest"));
-        assertEquals("c", c4.getProperty("childTest"));
-        assertEquals("b", c4.getProperty("classTest"));
+        assertEquals("hi", c.getString("foo"));
+        assertEquals("there", c2.getString("foo"));
+        assertEquals("hi", c.getString("foo"));
+        // TODO inheritance is disabled for now
+        //c3 = new SearchContext(c, "blah");
+        //assertEquals("hi", c3.getString("foo"));
+        //c4 = new SearchContext(c2, "em");
+        //assertEquals("ARGH", c4.getString("foo"));
+        //assertEquals("WTF", c4.getString("rootTest"));
+        //assertEquals("c", c4.getString("childTest"));
+        //assertEquals("b", c4.getString("classTest"));
     }
 }

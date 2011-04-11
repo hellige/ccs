@@ -109,10 +109,24 @@ public class CcsDocumentHandler implements DocumentHandler {
         // then set the property...
         // TODO the origin line number here is broken. i'm guessing flute's looking ahead...
         CcsProperty property =
-            new CcsProperty(value.getStringValue(), new Origin(fileName, reader
+            new CcsProperty(getStringValue(value), new Origin(fileName, reader
                 .getLineNumber()), propertyNumber);
-        currentNode.addProperty(name, property, false);
+        currentNode.addProperty(name, property, true);
         propertyNumber++;
+    }
+
+    private String getStringValue(LexicalUnit value) {
+        switch (value.getLexicalUnitType()) {
+            case LexicalUnit.SAC_STRING_VALUE:
+            case LexicalUnit.SAC_IDENT:
+                return value.getStringValue();
+            case LexicalUnit.SAC_INTEGER:
+                return Integer.toString(value.getIntegerValue());
+            case LexicalUnit.SAC_REAL:
+                return Double.toString(value.getFloatValue());
+            default:
+                throw new CSSException("unsupported property type: " + value);
+        }
     }
 
     private boolean validCombinator(Selector s) {

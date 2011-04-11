@@ -100,7 +100,7 @@ public class Key {
         try {
             for (String attrib : attributes.keySet()) {
                 if (sc == null
-                    || !attributes.get(attrib).equals(sc.getProperty(attrib))) {
+                    || !attributes.get(attrib).equals(sc.getString(attrib))) {
                     return false;
                 }
             }
