@@ -2,6 +2,7 @@
   - inherit vs. local, what's the right default?
   - merging sources into same tree
   - settings based on filename?
+  - @prefix or similar
   - interpolation
   - single quotes to enclose non-ident names
   - inherit/local
@@ -11,3 +12,4 @@
   - dump all prop values with origin (in priority order)
   - functional test framework (file-driven)
   - C++-style single-line comments
+  - do commas work?

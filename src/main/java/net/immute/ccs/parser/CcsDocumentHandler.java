@@ -7,6 +7,7 @@ import net.immute.ccs.tree.Node;
 import net.immute.ccs.tree.Key;
 import org.w3c.css.sac.*;
 
+import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.Stack;
 
@@ -14,16 +15,18 @@ public class CcsDocumentHandler implements DocumentHandler {
     private final Node rootNode;
     private final String fileName;
     private final LineNumberReader reader;
+    private ImportResolver importResolver;
 
     private SelectorList currentSelector = null;
     private Node currentNode = null;
     private int propertyNumber = 1;
 
     public CcsDocumentHandler(Node rootNode, String fileName,
-                              LineNumberReader reader) {
+                              LineNumberReader reader, ImportResolver importResolver) {
         this.rootNode = rootNode;
         this.fileName = fileName;
         this.reader = reader;
+        this.importResolver = importResolver;
     }
 
     public void comment(String arg0) throws CSSException {
@@ -50,16 +53,21 @@ public class CcsDocumentHandler implements DocumentHandler {
     }
 
     public void ignorableAtRule(String arg0) throws CSSException {
-    // ignored...
+        // ignored...
     }
 
-    public void importStyle(String arg0, SACMediaList arg1, String arg2)
-        throws CSSException {
-    // TODO: handle imports!
+    public void importStyle(String uri, SACMediaList media, String defaultNamespaceUri)
+            throws CSSException {
+        // TODO this doesn't correctly maintain property numbers across imports. fix.
+        try {
+            new Loader().loadCcsStream(importResolver.resolve(uri), uri, rootNode, importResolver);
+        } catch (IOException e) {
+            throw new CSSException(e);
+        }
     }
 
     public void namespaceDeclaration(String arg0, String arg1)
-        throws CSSException {
+            throws CSSException {
         CcsLogger.error("not implemented: namespaceDeclaration()");
     }
 
@@ -70,15 +78,14 @@ public class CcsDocumentHandler implements DocumentHandler {
         if (currentNode == null) {
             currentNode = rootNode;
             if (currentSelector.getLength() != 1) {
-                CcsLogger.error("unhandled selector length: "
-                        + currentSelector.getLength());
+                CcsLogger.error("unhandled selector length: "+ currentSelector.getLength());
             }
             Selector s = currentSelector.item(0);
             Stack<Key> selectors = new Stack<Key>();
             while (validCombinator(s)) {
                 DescendantSelector ds = (DescendantSelector) s;
                 Key key =
-                    handleSimpleSelector(ds.getSimpleSelector());
+                        handleSimpleSelector(ds.getSimpleSelector());
                 if (ds.getSelectorType() == Selector.SAC_CHILD_SELECTOR) {
                     key.setDirectChild(true);
                 }
@@ -88,11 +95,9 @@ public class CcsDocumentHandler implements DocumentHandler {
 
             // final parent...
             if (!(s instanceof SimpleSelector)) {
-                throw new CSSException(
-                    "not a simple selector or a combinator, what is it? " + s);
+                throw new CSSException("not a simple selector or a combinator, what is it? " + s);
             }
-            selectors
-                .push(handleSimpleSelector((SimpleSelector) s));
+            selectors.push(handleSimpleSelector((SimpleSelector) s));
 
             // then build our nodes...
             while (!selectors.isEmpty()) {
@@ -109,8 +114,8 @@ public class CcsDocumentHandler implements DocumentHandler {
         // then set the property...
         // TODO the origin line number here is broken. i'm guessing flute's looking ahead...
         CcsProperty property =
-            new CcsProperty(getStringValue(value), new Origin(fileName, reader
-                .getLineNumber()), propertyNumber);
+                new CcsProperty(getStringValue(value), new Origin(fileName, reader
+                        .getLineNumber()), propertyNumber);
         currentNode.addProperty(name, property, true);
         propertyNumber++;
     }

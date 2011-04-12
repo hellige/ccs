@@ -17,16 +17,24 @@ public class Loader {
         return loadCcsStream(uri.openStream(), fileName);
     }
 
-    public Node loadCcsStream(InputStream stream, String fileName)
-        throws IOException {
+    public Node loadCcsStream(InputStream stream, String fileName) throws IOException {
+        return loadCcsStream(stream, fileName, null);
+    }
+
+    public Node loadCcsStream(InputStream stream, String fileName, ImportResolver importResolver)
+            throws IOException {
         Node root = new Node();
+        return loadCcsStream(stream, fileName, root, importResolver);
+    }
+
+    public Node loadCcsStream(InputStream stream, String fileName, Node root, ImportResolver importResolver)
+            throws IOException {
         LineNumberReader reader =
             new LineNumberReader(new InputStreamReader(stream));
         InputSource source = new InputSource();
         source.setCharacterStream(reader);
         Parser parser = new Parser();
-        parser
-            .setDocumentHandler(new CcsDocumentHandler(root, fileName, reader));
+        parser.setDocumentHandler(new CcsDocumentHandler(root, fileName, reader, importResolver));
         parser.parseStyleSheet(source);
         reader.close();
         return root;
