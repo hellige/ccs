@@ -2,6 +2,7 @@ package net.immute.ccs;
 
 import net.immute.ccs.parser.Loader;
 import net.immute.ccs.tree.Node;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -49,5 +50,16 @@ public class NewRulesTest {
         assertEquals("correct", c.getString("test1"));
         c = new SearchContext(c, "foo");
         assertEquals("correct", c.getString("test2"));
+    }
+
+    @Test
+    @Ignore("relies on 'important!'")
+    public void testOuterOverride() throws Exception {
+        Node root = load("outer-override.ccs");
+        SearchContext c = new SearchContext(root, "root");
+        c = new SearchContext(c, "env", "dev");
+        c = new SearchContext(c, "user", "me");
+        c = new SearchContext(c, "foo");
+        assertEquals("correct", c.getString("test"));
     }
 }

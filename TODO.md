@@ -12,4 +12,4 @@
   - dump all prop values with origin (in priority order)
   - functional test framework (file-driven)
   - C++-style single-line comments
-  - do commas work?
+  - make commas work
