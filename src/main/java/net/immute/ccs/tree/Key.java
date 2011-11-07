@@ -1,13 +1,13 @@
 package net.immute.ccs.tree;
 
+import net.immute.ccs.NoSuchPropertyException;
+import net.immute.ccs.SearchContext;
+import net.immute.ccs.Specificity;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import net.immute.ccs.NoSuchPropertyException;
-import net.immute.ccs.SearchContext;
-import net.immute.ccs.Specificity;
 
 public class Key {
     private final String element;
@@ -120,7 +120,8 @@ public class Key {
         if (root) result.append(":root");
         if (id != null) result.append("#").append(id);
         for (String c : classes) result.append(".").append(c);
-        for (String a : attributes.keySet()) result.append("[").append(a).append("=").append(attributes.get(a));
+        for (String a : attributes.keySet()) result.append("[").append(a).append("=").append(attributes.get(a))
+                .append("]");
         return result.toString();
     }
 
