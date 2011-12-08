@@ -1,4 +1,4 @@
-package net.immute.ccs.parser;
+package net.immute.ccs.oldparser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.net.URL;
 
+import net.immute.ccs.oldparser.CcsDocumentHandler;
+import net.immute.ccs.parser.ImportResolver;
 import net.immute.ccs.tree.Node;
 
 import org.w3c.css.sac.InputSource;

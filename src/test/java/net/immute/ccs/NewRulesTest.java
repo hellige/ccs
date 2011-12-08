@@ -1,6 +1,6 @@
 package net.immute.ccs;
 
-import net.immute.ccs.parser.Loader;
+import net.immute.ccs.oldparser.Loader;
 import net.immute.ccs.tree.Node;
 import org.junit.Ignore;
 import org.junit.Test;

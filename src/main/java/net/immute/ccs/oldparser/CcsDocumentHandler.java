@@ -1,8 +1,9 @@
-package net.immute.ccs.parser;
+package net.immute.ccs.oldparser;
 
 import net.immute.ccs.CcsLogger;
 import net.immute.ccs.CcsProperty;
 import net.immute.ccs.Origin;
+import net.immute.ccs.parser.ImportResolver;
 import net.immute.ccs.tree.Node;
 import net.immute.ccs.tree.Key;
 import org.w3c.css.sac.*;
