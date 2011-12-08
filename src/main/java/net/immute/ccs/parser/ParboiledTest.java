@@ -7,7 +7,8 @@ import org.parboiled.annotations.BuildParseTree;
 import org.parboiled.annotations.MemoMismatches;
 import org.parboiled.annotations.SuppressNode;
 import org.parboiled.annotations.SuppressSubnodes;
-import org.parboiled.parserunners.ReportingParseRunner;
+import org.parboiled.errors.ErrorUtils;
+import org.parboiled.parserunners.RecoveringParseRunner;
 import org.parboiled.support.ParseTreeUtils;
 import org.parboiled.support.ParsingResult;
 
@@ -145,8 +146,10 @@ public class ParboiledTest {
         String input = args.length > 0 ? args[0] : "\n@context (foo#bar);\n @import /* hi */ 'foo';\n@import 'bar';" +
                 ".class > #id[a = 'b'] asdf { foo = 'test'; bar = 32; baz = 0.3; bum = 1e1 };";
         CcsParser parser = Parboiled.createParser(CcsParser.class);
-        ParsingResult<?> result = new ReportingParseRunner(parser.ruleset()).run(input);
-        String parseTreePrintOut = ParseTreeUtils.printNodeTree(result);
-        System.out.println(parseTreePrintOut);
+        ParsingResult<?> result = new RecoveringParseRunner(parser.ruleset()).run(input);
+        if (!result.hasErrors())
+            System.out.println(ParseTreeUtils.printNodeTree(result));
+        else
+            System.out.println(ErrorUtils.printParseErrors(result));
     }
 }
