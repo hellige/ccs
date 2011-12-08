@@ -4,6 +4,8 @@ import org.parboiled.BaseParser;
 import org.parboiled.Parboiled;
 import org.parboiled.Rule;
 import org.parboiled.annotations.BuildParseTree;
+import org.parboiled.annotations.MemoMismatches;
+import org.parboiled.annotations.SuppressNode;
 import org.parboiled.annotations.SuppressSubnodes;
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParseTreeUtils;
@@ -21,10 +23,10 @@ public class ParboiledTest {
             return FirstOf(AnyOf(" \t\f"), nl());
         }
 
-        @SuppressSubnodes
+        @SuppressNode
         Rule sp() {
             return ZeroOrMore(FirstOf(blockComment(),
-                    Sequence("//", ZeroOrMore(NoneOf("\n\r"), FirstOf(nl(), EOI))),
+                    Sequence("//", ZeroOrMore(NoneOf("\n\r")), FirstOf(nl(), EOI)),
                     space()));
         }
 
@@ -34,14 +36,47 @@ public class ParboiledTest {
         }
 
         @SuppressSubnodes
-        Rule string() {
+        Rule stringLit() {
             return FirstOf(
                     Sequence('\'', ZeroOrMore(NoneOf("\'\n\r")), '\''),
                     Sequence('\"', ZeroOrMore(NoneOf("\"\n\r")), '\"'));
         }
 
+        Rule boolLit() {
+            return FirstOf("true", "false");
+        }
+
+        @SuppressSubnodes
+        @MemoMismatches
+        Rule hexLit() {
+            return Sequence('0', IgnoreCase('x'),
+                    OneOrMore(FirstOf(CharRange('a', 'f'), CharRange('A', 'F'), CharRange('0', '9'))));
+        }
+
+        Rule Digit() {
+            return CharRange('0', '9');
+        }
+
+        Rule Exponent() {
+            return Sequence(AnyOf("eE"), Optional(AnyOf("+-")), OneOrMore(Digit()));
+        }
+
+        @SuppressSubnodes
+        Rule doubleLit() {
+            return FirstOf(
+                    Sequence(OneOrMore(Digit()), '.', ZeroOrMore(Digit()), Optional(Exponent())),
+                    Sequence('.', OneOrMore(Digit()), Optional(Exponent())),
+                    Sequence(OneOrMore(Digit()), Exponent())
+            );
+        }
+
+        @SuppressSubnodes
+        Rule intLit() {
+            return Sequence(Optional('-'), OneOrMore(Digit()));
+        }
+
         Rule val() {
-            return string(); // TODO hex, long, double
+            return FirstOf(boolLit(), hexLit(), doubleLit(), intLit(), stringLit());
         }
 
         Rule identChar() {
@@ -50,19 +85,45 @@ public class ParboiledTest {
 
         @SuppressSubnodes
         Rule ident() {
-            return FirstOf(OneOrMore(identChar()), string());
+            return FirstOf(OneOrMore(identChar()), stringLit());
         }
 
         Rule property() {
-            return Sequence(Optional("inherit"), sp(), ident(), sp(), '=', sp(), val(), sp()); //qi::lexeme[val >> !ident];
+            return Sequence(Optional("inherit"), sp(), ident(), sp(), '=', sp(), val(), sp()); // TODO qi::lexeme[val >> !ident];
         }
-        
+
+        Rule stepsuffix() {
+            return FirstOf(
+                    Sequence('.', ident(), Optional(stepsuffix())),
+                    Sequence('#', ident(), Optional(stepsuffix())),
+                    Sequence('[', sp(), ident(), sp(), '=', sp(), val(), sp(), ']', Optional(stepsuffix())));
+        }
+
+        Rule step() {
+            return FirstOf(
+                    Sequence(FirstOf('*', ident()), Optional(stepsuffix())),
+                    stepsuffix(),
+                    Sequence('(', sum(), ')'));
+        }
+
+        Rule term() {
+            return Sequence(step(), ZeroOrMore(sp(), Optional('>'), sp(), step()));
+        }
+
+        Rule product() {
+            return Sequence(term(), ZeroOrMore(sp(), '+', term()));
+        }
+
+        Rule sum() {
+            return Sequence(product(), ZeroOrMore(Sequence(sp(), ',', sp(), product())));
+        }
+
         Rule selector() {
-            return String("selector"); // TODO
+            return Sequence(Optional(AnyOf("+>,")), sp(), sum());
         }
 
         Rule imprt() {
-            return Sequence("@import", sp(), string());
+            return Sequence("@import", sp(), stringLit());
         }
 
         Rule context() {
@@ -71,7 +132,7 @@ public class ParboiledTest {
         }
 
         Rule rule() {
-            return Sequence(FirstOf(imprt(), property(), Sequence(selector(), sp(), '{', sp(),
+            return Sequence(sp(), FirstOf(imprt(), property(), Sequence(selector(), sp(), '{', sp(),
                     ZeroOrMore(rule()), '}')), sp(), Optional(';'), sp());
         }
 
@@ -81,8 +142,8 @@ public class ParboiledTest {
     }
 
     public static void main(String[] args) {
-        String input = args.length > 0 ? args[0] : "\n@context (selector);\n @import /* hi */ 'foo';\n@import 'bar';" +
-                "selector { foo = 'test' };";
+        String input = args.length > 0 ? args[0] : "\n@context (foo#bar);\n @import /* hi */ 'foo';\n@import 'bar';" +
+                ".class > #id[a = 'b'] asdf { foo = 'test'; bar = 32; baz = 0.3; bum = 1e1 };";
         CcsParser parser = Parboiled.createParser(CcsParser.class);
         ParsingResult<?> result = new ReportingParseRunner(parser.ruleset()).run(input);
         String parseTreePrintOut = ParseTreeUtils.printNodeTree(result);
