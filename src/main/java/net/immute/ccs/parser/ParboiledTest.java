@@ -112,7 +112,7 @@ public class ParboiledTest {
         }
 
         Rule product() {
-            return Sequence(term(), ZeroOrMore(sp(), '+', term()));
+            return Sequence(term(), ZeroOrMore(sp(), '+', sp(), term()));
         }
 
         Rule sum() {
