@@ -120,7 +120,7 @@ public class ParboiledTest {
         }
 
         Rule selector() {
-            return Sequence(Optional(AnyOf("+>,")), sp(), sum());
+            return Sequence(Optional(AnyOf("+>")), sp(), sum());
         }
 
         Rule imprt() {
