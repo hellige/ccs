@@ -3,18 +3,24 @@ package net.immute.ccs.parser;
 import org.parboiled.BaseParser;
 import org.parboiled.Parboiled;
 import org.parboiled.Rule;
-import org.parboiled.annotations.BuildParseTree;
-import org.parboiled.annotations.MemoMismatches;
-import org.parboiled.annotations.SuppressNode;
-import org.parboiled.annotations.SuppressSubnodes;
+import org.parboiled.annotations.*;
 import org.parboiled.errors.ErrorUtils;
 import org.parboiled.parserunners.RecoveringParseRunner;
 import org.parboiled.support.ParseTreeUtils;
 import org.parboiled.support.ParsingResult;
+import org.parboiled.support.Var;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ParboiledTest {
     @BuildParseTree
-    static class CcsParser extends BaseParser<Void> {
+    static class CcsBaseParser<T> extends BaseParser<T> {
+        protected <T> boolean append(Var<? extends List<? super T>> ts, T t) {
+            ts.get().add(t);
+            return true;
+        }
+
         @SuppressSubnodes
         Rule nl() {
             return FirstOf('\n', Sequence('\r', Optional('\n')));
@@ -37,21 +43,21 @@ public class ParboiledTest {
         }
 
         @SuppressSubnodes
-        Rule stringLit() {
+        Rule stringLit(Var<? super Value<String>> value) {
             return FirstOf(
-                    Sequence('\'', ZeroOrMore(NoneOf("\'\n\r")), '\''),
-                    Sequence('\"', ZeroOrMore(NoneOf("\"\n\r")), '\"'));
+                    Sequence('\'', ZeroOrMore(NoneOf("\'\n\r")), value.set(new Value<String>(match())), '\''),
+                    Sequence('\"', ZeroOrMore(NoneOf("\"\n\r")), value.set(new Value<String>(match())), '\"'));
         }
 
-        Rule boolLit() {
-            return FirstOf("true", "false");
+        Rule boolLit(Var<Value<?>> value) {
+            return Sequence(FirstOf("true", "false"), value.set(new Value<Boolean>(Boolean.valueOf(match()))));
         }
 
         @SuppressSubnodes
-        @MemoMismatches
-        Rule hexLit() {
+        Rule hexLit(Var<? super Value<Long>> value) {
             return Sequence('0', IgnoreCase('x'),
-                    OneOrMore(FirstOf(CharRange('a', 'f'), CharRange('A', 'F'), CharRange('0', '9'))));
+                    OneOrMore(FirstOf(CharRange('a', 'f'), CharRange('A', 'F'), CharRange('0', '9'))),
+                    value.set(new Value<Long>(Long.parseLong(match(), 16))));
         }
 
         Rule Digit() {
@@ -63,21 +69,22 @@ public class ParboiledTest {
         }
 
         @SuppressSubnodes
-        Rule doubleLit() {
-            return FirstOf(
+        Rule doubleLit(Var<? super Value<Double>> value) {
+            return Sequence(FirstOf(
                     Sequence(OneOrMore(Digit()), '.', ZeroOrMore(Digit()), Optional(Exponent())),
                     Sequence('.', OneOrMore(Digit()), Optional(Exponent())),
-                    Sequence(OneOrMore(Digit()), Exponent())
-            );
+                    Sequence(OneOrMore(Digit()), Exponent())),
+                    value.set(new Value<Double>(Double.parseDouble(match()))));
         }
 
         @SuppressSubnodes
-        Rule intLit() {
-            return Sequence(Optional('-'), OneOrMore(Digit()));
+        Rule intLit(Var<? super Value<Long>> value) {
+            return Sequence(Sequence(Optional('-'), OneOrMore(Digit())),
+                    value.set(new Value<Long>(Long.parseLong(match()))));
         }
 
-        Rule val() {
-            return FirstOf(boolLit(), hexLit(), doubleLit(), intLit(), stringLit());
+        Rule val(Var<Value<?>> value) {
+            return FirstOf(boolLit(value), hexLit(value), doubleLit(value), intLit(value), stringLit(value));
         }
 
         Rule identChar() {
@@ -85,60 +92,90 @@ public class ParboiledTest {
         }
 
         @SuppressSubnodes
-        Rule ident() {
-            return FirstOf(OneOrMore(identChar()), stringLit());
-        }
-
-        Rule property() {
-            return Sequence(Optional("inherit"), sp(), ident(), sp(), '=', sp(), val(), sp()); // TODO qi::lexeme[val >> !ident];
-        }
-
-        Rule stepsuffix() {
+        Rule ident(Var<String> ident) {
+            Var<Value<String>> tmp = new Var<Value<String>>();
             return FirstOf(
-                    Sequence('.', ident(), Optional(stepsuffix())),
-                    Sequence('#', ident(), Optional(stepsuffix())),
-                    Sequence('[', sp(), ident(), sp(), '=', sp(), val(), sp(), ']', Optional(stepsuffix())));
+                    Sequence(OneOrMore(identChar()), ident.set(match())),
+                    Sequence(stringLit(tmp), ident.set(tmp.get().get())));
+        }
+    }
+    
+    @BuildParseTree
+    static class SelectorParser extends CcsBaseParser<Selector> {
+        Rule stepsuffix() {
+            Var<String> tmp = new Var<String>();
+            return FirstOf(
+                    Sequence('.', ident(tmp), Optional(stepsuffix())),
+                    Sequence('#', ident(tmp), Optional(stepsuffix())),
+                    Sequence('[', sp(), ident(tmp), sp(), '=', sp(), val(new Var<Value<?>>()), sp(), ']', Optional(stepsuffix())));
         }
 
         Rule step() {
-            return FirstOf(
-                    Sequence(FirstOf('*', ident()), Optional(stepsuffix())),
+            return Sequence(push(new Selector.Step()), FirstOf( // TODO push a real step result!
+                    Sequence(FirstOf('*', ident(new Var<String>())), Optional(stepsuffix())),
                     stepsuffix(),
-                    Sequence('(', sum(), ')'));
+                    Sequence('(', sum(), ')')));
         }
 
         Rule term() {
-            return Sequence(step(), ZeroOrMore(sp(), Optional('>'), sp(), step()));
+            return Sequence(step(), ZeroOrMore(sp(), Optional('>'), sp(), step(),
+                    push(new Selector.Descendant(pop(1), pop())))); // TODO handle direct child...
         }
 
         Rule product() {
-            return Sequence(term(), ZeroOrMore(sp(), '+', sp(), term()));
+            return Sequence(term(), ZeroOrMore(sp(), '+', sp(), term(), push(pop(1).conjoin(pop()))));
         }
 
         Rule sum() {
-            return Sequence(product(), ZeroOrMore(Sequence(sp(), ',', sp(), product())));
+            return Sequence(product(), ZeroOrMore(Sequence(sp(), ',', sp(), product(), push(pop(1).disjoin(pop())))));
+        }
+    }
+
+    @BuildParseTree
+    static class CcsParser extends CcsBaseParser<List<AstRule>> {
+        protected final SelectorParser selectorParser = Parboiled.createParser(SelectorParser.class);
+
+        Rule property(Var<List<AstRule>> rules) {
+            Var<String> name = new Var<String>();
+            Var<Value<?>> value = new Var<Value<?>>();
+            return Sequence(Optional("inherit"), sp(), ident(name), sp(), '=', sp(), val(value), sp(),
+                    append(rules, new AstRule.PropDef(name.get(), value.get()))); // TODO qi::lexeme[val >> !ident];
         }
 
-        Rule selector() {
-            return Sequence(Optional(AnyOf("+>")), sp(), sum());
+        Rule selector(Var<Selector> result) {
+            return Sequence(selectorParser.sum(), sp(), Optional(AnyOf("+>")), result.set(selectorParser.pop())); // TODO +>
         }
 
-        Rule imprt() {
-            return Sequence("@import", sp(), stringLit());
+        Rule imprt(Var<List<AstRule>> rules) {
+            Var<Value<String>> location = new Var<Value<String>>();
+            return Sequence("@import", sp(), stringLit(location),
+                    append(rules, new AstRule.Import(location.get().get())));
+        }
+        
+        Rule nested(Var<List<AstRule>> rules) {
+            Var<Selector> selector = new Var<Selector>();
+            Var<List<AstRule>> tmp = new Var<List<AstRule>>();
+            return Sequence(selector(selector), sp(), '{', sp(),
+                    rules.enterFrame(), ZeroOrMore(rule(rules)), '}', tmp.set(rules.get()), rules.exitFrame(),
+                    append(rules, new AstRule.Nested(selector.get(), tmp.get())));
         }
 
-        Rule context() {
-            return Sequence("@context", sp(), Optional(AnyOf("+>")), sp(), '(', sp(), selector(), sp(), ')',
+        @Cached
+        Rule rule(Var<List<AstRule>> rules) {
+            return Sequence(sp(), FirstOf(imprt(rules), property(rules), nested(rules)), sp(), Optional(';'), sp());
+        }
+
+        Rule context(Var<Selector> result) {
+            return Sequence("@context", sp(), '(', sp(), selector(result), sp(), ')',
                     sp(), Optional(';'), sp());
         }
 
-        Rule rule() {
-            return Sequence(sp(), FirstOf(imprt(), property(), Sequence(selector(), sp(), '{', sp(),
-                    ZeroOrMore(rule()), '}')), sp(), Optional(';'), sp());
-        }
-
         Rule ruleset() {
-            return Sequence(sp(), ZeroOrMore(context()), sp(), ZeroOrMore(rule()), sp(), EOI);
+            Var<Selector> context = new Var<Selector>();
+            Var<List<AstRule>> rules = new Var<List<AstRule>>(new ArrayList<AstRule>());
+            // TODO include context in final result...
+            return Sequence(sp(), Optional(context(context)), sp(),
+                    ZeroOrMore(rule(rules)), sp(), push(rules.get()), EOI);
         }
     }
 
