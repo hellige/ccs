@@ -1,5 +1,7 @@
 package net.immute.ccs.parser;
 
+import net.immute.ccs.tree.Key;
+
 public abstract class Selector {
     Selector conjoin(Selector next) {
         return new Conjunction(this, next); // TODO override to optimize...
@@ -49,8 +51,10 @@ public abstract class Selector {
     }
     
     public static class Step extends Selector {
-        public Step() {
-            // TODO
+        private final Key key;
+
+        public Step(Key key) {
+            this.key = key;
         }
     }
 }

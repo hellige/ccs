@@ -10,11 +10,11 @@ import java.util.Map;
 import java.util.Set;
 
 public class Key {
-    private final String element;
     private final Map<String, String> attributes = new HashMap<String, String>();
     private final Set<String> classes = new HashSet<String>();
     private final Specificity specificity = new Specificity();
 
+    private String element;
     private String id;
     private boolean root;
     private boolean directChild;
@@ -30,6 +30,10 @@ public class Key {
             this.classes.add(cls);
             specificity.incClassSelectors();
         }
+    }
+
+    public void setElement(String element) {
+        this.element = element;
     }
 
     public Specificity getSpecificity() {

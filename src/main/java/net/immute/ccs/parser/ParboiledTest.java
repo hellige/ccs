@@ -1,5 +1,6 @@
 package net.immute.ccs.parser;
 
+import net.immute.ccs.tree.Key;
 import org.parboiled.BaseParser;
 import org.parboiled.Parboiled;
 import org.parboiled.Rule;
@@ -99,27 +100,54 @@ public class ParboiledTest {
                     Sequence(stringLit(tmp), ident.set(tmp.get().get())));
         }
     }
-    
+
     @BuildParseTree
     static class SelectorParser extends CcsBaseParser<Selector> {
-        Rule stepsuffix() {
+        protected boolean setElement(Var<Key> key, String element) {
+            key.get().setElement(element);
+            return true;
+        }
+
+        protected boolean addClass(Var<Key> key, String cls) {
+            key.get().addClass(cls);
+            return true;
+        }
+
+        protected boolean setId(Var<Key> key, String id) {
+            key.get().setId(id);
+            return true;
+        }
+
+        protected boolean setAttribute(Var<Key> key, String attr, Value<?> value) {
+            key.get().setAttribute(attr, value.toString()); // TODO use real value, not string
+            return true;
+        }
+
+        @Cached
+        Rule stepsuffix(Var<Key> key) {
             Var<String> tmp = new Var<String>();
+            Var<Value<?>> attrVal = new Var<Value<?>>();
             return FirstOf(
-                    Sequence('.', ident(tmp), Optional(stepsuffix())),
-                    Sequence('#', ident(tmp), Optional(stepsuffix())),
-                    Sequence('[', sp(), ident(tmp), sp(), '=', sp(), val(new Var<Value<?>>()), sp(), ']', Optional(stepsuffix())));
+                    Sequence('.', ident(tmp), addClass(key, tmp.get()), Optional(stepsuffix(key))),
+                    Sequence('#', ident(tmp), setId(key, tmp.get()), Optional(stepsuffix(key))),
+                    Sequence('[', sp(), ident(tmp), sp(), '=', sp(), val(attrVal), sp(), ']',
+                            setAttribute(key, tmp.get(), attrVal.get()), Optional(stepsuffix(key))));
         }
 
         Rule step() {
-            return Sequence(push(new Selector.Step()), FirstOf( // TODO push a real step result!
-                    Sequence(FirstOf('*', ident(new Var<String>())), Optional(stepsuffix())),
-                    stepsuffix(),
-                    Sequence('(', sum(), ')')));
+            Var<Key> key = new Var<Key>(new Key(null));
+            Var<String> tmp = new Var<String>();
+            return FirstOf(
+                    Sequence(FirstOf('*', Sequence(ident(tmp), setElement(key, tmp.get()))), Optional(stepsuffix(key)),
+                            push(new Selector.Step(key.get()))),
+                    Sequence(stepsuffix(key), push(new Selector.Step(key.get()))),
+                    Sequence('(', sum(), ')'));
         }
 
         Rule term() {
-            return Sequence(step(), ZeroOrMore(sp(), Optional('>'), sp(), step(),
-                    push(new Selector.Descendant(pop(1), pop())))); // TODO handle direct child...
+            return Sequence(step(), ZeroOrMore(sp(), FirstOf(
+                    Sequence('>', sp(), step(), push(new Selector.Child(pop(1), pop()))),
+                    Sequence(step(), push(new Selector.Descendant(pop(1), pop()))))));
         }
 
         Rule product() {
@@ -135,6 +163,7 @@ public class ParboiledTest {
     static class CcsParser extends CcsBaseParser<List<AstRule>> {
         protected final SelectorParser selectorParser = Parboiled.createParser(SelectorParser.class);
 
+        // TODO consider explicit 'override'
         Rule property(Var<List<AstRule>> rules) {
             Var<String> name = new Var<String>();
             Var<Value<?>> value = new Var<Value<?>>();
@@ -151,7 +180,7 @@ public class ParboiledTest {
             return Sequence("@import", sp(), stringLit(location),
                     append(rules, new AstRule.Import(location.get().get())));
         }
-        
+
         Rule nested(Var<List<AstRule>> rules) {
             Var<Selector> selector = new Var<Selector>();
             Var<List<AstRule>> tmp = new Var<List<AstRule>>();
@@ -181,7 +210,7 @@ public class ParboiledTest {
 
     public static void main(String[] args) {
         String input = args.length > 0 ? args[0] : "\n@context (foo#bar);\n @import /* hi */ 'foo';\n@import 'bar';" +
-                ".class > #id[a = 'b'] asdf { foo = 'test'; bar = 32; baz = 0.3; bum = 1e1 };";
+                ".class > #id[a = 'b'] (a + b + c) asdf { foo = 'test'; bar = 32; baz = 0.3; bum = 1e1 };";
         CcsParser parser = Parboiled.createParser(CcsParser.class);
         ParsingResult<?> result = new RecoveringParseRunner(parser.ruleset()).run(input);
         if (!result.hasErrors())
