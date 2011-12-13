@@ -1,18 +1,19 @@
 package net.immute.ccs;
 
-import java.util.*;
-
-import net.immute.ccs.tree.Node;
 import net.immute.ccs.tree.Key;
+import net.immute.ccs.tree.Node;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.reverseOrder;
 import static java.util.Collections.singletonList;
 
 public class SearchContext {
+    private final AtomicReference<List<List<Node>>> nodeList = new AtomicReference<List<List<Node>>>();
+
     private final SearchContext parent;
     private final Key key;
-
-    private List<List<Node>> nodeList;
 
     private static final Comparator<CcsProperty> PROP_COMPARATOR =
         new Comparator<CcsProperty>() {
@@ -22,7 +23,7 @@ public class SearchContext {
         };
 
     private SearchContext(Node root) {
-        nodeList = singletonList(singletonList(root));
+        nodeList.set(singletonList(singletonList(root)));
         parent = null;
         key = null;
     }
@@ -131,8 +132,17 @@ public class SearchContext {
         return null;
     }
 
+    private List<List<Node>> getBucket(SortedMap<Specificity, List<List<Node>>> buckets, Specificity spec) {
+        List<List<Node>> bucket = buckets.get(spec);
+        if (bucket == null) {
+            bucket = new ArrayList<List<Node>>();
+            buckets.put(spec, bucket);
+        }
+        return bucket;
+    }
+
     private List<List<Node>> getNodes() {
-        if (nodeList == null) {
+        if (nodeList.get() == null) {
             SortedMap<Specificity, List<List<Node>>> buckets =
                     new TreeMap<Specificity, List<List<Node>>>(reverseOrder());
             boolean includeDirectChildren = true;
@@ -143,23 +153,21 @@ public class SearchContext {
                             new TreeMap<Specificity, List<Node>>(reverseOrder());
                     for (Node n : ns)
                         n.getChildren(key, parent, includeDirectChildren, results);
-                    for (Specificity spec : results.keySet()) {
-                        List<List<Node>> bucket = buckets.get(spec);
-                        if (bucket == null) {
-                            bucket = new ArrayList<List<Node>>();
-                            buckets.put(spec, bucket);
-                        }
-                        bucket.add(results.get(spec));
-                    }
+                    for (Specificity spec : results.keySet())
+                        getBucket(buckets, spec).add(results.get(spec));
                 }
                 includeDirectChildren = false;
                 p = p.parent;
             }
-            nodeList = new ArrayList<List<Node>>();
+
+            List<List<Node>> tmp = new ArrayList<List<Node>>();
             for (List<List<Node>> nss : buckets.values())
-                nodeList.addAll(nss);
+                tmp.addAll(nss);
+
+            nodeList.compareAndSet(null, tmp);
         }
-        return nodeList;
+
+        return nodeList.get();
     }
 
     @Override
