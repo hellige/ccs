@@ -34,6 +34,10 @@ public class Key {
 
     public void setElement(String element) {
         this.element = element;
+        if (element != null) {
+            // TODO not quite right...
+            specificity.incElementNames();
+        }
     }
 
     public Specificity getSpecificity() {

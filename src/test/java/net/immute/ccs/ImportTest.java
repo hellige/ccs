@@ -16,7 +16,6 @@ public class ImportTest {
         ImportResolver resolver = new ImportResolver() {
             @Override
             public InputStream resolve(String uri) {
-                System.err.println("here");
                 return getClass().getResourceAsStream("/"+uri);
             }
         };

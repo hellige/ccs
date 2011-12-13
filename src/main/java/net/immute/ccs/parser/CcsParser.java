@@ -1,24 +1,40 @@
 package net.immute.ccs.parser;
 
+import net.immute.ccs.Origin;
 import net.immute.ccs.tree.Key;
 import org.parboiled.BaseParser;
 import org.parboiled.Parboiled;
 import org.parboiled.Rule;
-import org.parboiled.annotations.*;
-import org.parboiled.errors.ErrorUtils;
+import org.parboiled.annotations.BuildParseTree;
+import org.parboiled.annotations.Cached;
+import org.parboiled.annotations.SuppressNode;
+import org.parboiled.annotations.SuppressSubnodes;
+import org.parboiled.buffers.DefaultInputBuffer;
+import org.parboiled.buffers.InputBuffer;
+import org.parboiled.common.FileUtils;
 import org.parboiled.parserunners.RecoveringParseRunner;
-import org.parboiled.support.ParseTreeUtils;
 import org.parboiled.support.ParsingResult;
 import org.parboiled.support.Var;
 
+import java.io.CharArrayWriter;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ParboiledTest {
+public class CcsParser {
+    public ParsingResult<List<AstRule>> parse(Reader input, String fileName) throws IOException {
+        CharArrayWriter tmp = new CharArrayWriter();
+        FileUtils.copyAll(input, tmp);
+        InputBuffer buffer = new DefaultInputBuffer(tmp.toCharArray());
+        RulesetParser parser = Parboiled.createParser(RulesetParser.class, fileName);
+        return new RecoveringParseRunner<List<AstRule>>(parser.ruleset()).run(buffer);
+    }
+
     @BuildParseTree
     static class CcsBaseParser<T> extends BaseParser<T> {
-        protected <T> boolean append(Var<? extends List<? super T>> ts, T t) {
-            ts.get().add(t);
+        protected <T> boolean append(List<? super T> ts, T t) {
+            ts.add(t);
             return true;
         }
 
@@ -135,18 +151,20 @@ public class ParboiledTest {
         }
 
         Rule step() {
-            Var<Key> key = new Var<Key>(new Key(null));
+            Var<Key> key = new Var<Key>();
             Var<String> tmp = new Var<String>();
-            return FirstOf(
+            // note: we have to set key's initial value below (rather than via the constructor) if we want things
+            // to work in jarjar. which we do.
+            return Sequence(key.set(new Key(null)), FirstOf(
                     Sequence(FirstOf('*', Sequence(ident(tmp), setElement(key, tmp.get()))), Optional(stepsuffix(key)),
                             push(new Selector.Step(key.get()))),
                     Sequence(stepsuffix(key), push(new Selector.Step(key.get()))),
-                    Sequence('(', sum(), ')'));
+                    Sequence('(', sum(), ')')));
         }
 
         Rule term() {
             return Sequence(step(), ZeroOrMore(sp(), FirstOf(
-                    Sequence('>', sp(), step(), push(new Selector.Child(pop(1), pop()))),
+                    Sequence('>', sp(), step(), push(new Selector.Descendant(pop(1), pop().asDirectChild()))),
                     Sequence(step(), push(new Selector.Descendant(pop(1), pop()))))));
         }
 
@@ -160,38 +178,46 @@ public class ParboiledTest {
     }
 
     @BuildParseTree
-    static class CcsParser extends CcsBaseParser<List<AstRule>> {
+    static class RulesetParser extends CcsBaseParser<List<AstRule>> {
         protected final SelectorParser selectorParser = Parboiled.createParser(SelectorParser.class);
 
+        protected final String fileName;
+
+        RulesetParser(String fileName) {
+            this.fileName = fileName;
+        }
+
         // TODO consider explicit 'override'
-        Rule property(Var<List<AstRule>> rules) {
+        Rule property() {
             Var<String> name = new Var<String>();
             Var<Value<?>> value = new Var<Value<?>>();
-            return Sequence(Optional("inherit"), sp(), ident(name), sp(), '=', sp(), val(value), sp(),
-                    append(rules, new AstRule.PropDef(name.get(), value.get()))); // TODO qi::lexeme[val >> !ident];
+            // TODO do something with "inherit"...
+            return Sequence(Optional("inherit"), sp(), ident(name), sp(), '=', sp(), val(value),
+                    append(peek(), new AstRule.PropDef(name.get(), value.get(), new Origin(fileName, position().line))),
+                    sp()); // put space after the append() so that we're sure to have the right line number...
+                    // TODO qi::lexeme[val >> !ident];
         }
 
         Rule selector(Var<Selector> result) {
             return Sequence(selectorParser.sum(), sp(), Optional(AnyOf("+>")), result.set(selectorParser.pop())); // TODO +>
         }
 
-        Rule imprt(Var<List<AstRule>> rules) {
+        Rule imprt() {
             Var<Value<String>> location = new Var<Value<String>>();
             return Sequence("@import", sp(), stringLit(location),
-                    append(rules, new AstRule.Import(location.get().get())));
+                    append(peek(), new AstRule.Import(location.get().get())));
         }
 
-        Rule nested(Var<List<AstRule>> rules) {
+        Rule nested() {
             Var<Selector> selector = new Var<Selector>();
-            Var<List<AstRule>> tmp = new Var<List<AstRule>>();
             return Sequence(selector(selector), sp(), '{', sp(),
-                    rules.enterFrame(), ZeroOrMore(rule(rules)), '}', tmp.set(rules.get()), rules.exitFrame(),
-                    append(rules, new AstRule.Nested(selector.get(), tmp.get())));
+                    push(new ArrayList<AstRule>()), ZeroOrMore(rule()), '}',
+                    append(peek(1), new AstRule.Nested(selector.get(), pop())));
         }
 
         @Cached
-        Rule rule(Var<List<AstRule>> rules) {
-            return Sequence(sp(), FirstOf(imprt(rules), property(rules), nested(rules)), sp(), Optional(';'), sp());
+        Rule rule() {
+            return Sequence(sp(), FirstOf(imprt(), property(), nested()), sp(), Optional(';'), sp());
         }
 
         Rule context(Var<Selector> result) {
@@ -201,21 +227,9 @@ public class ParboiledTest {
 
         Rule ruleset() {
             Var<Selector> context = new Var<Selector>();
-            Var<List<AstRule>> rules = new Var<List<AstRule>>(new ArrayList<AstRule>());
             // TODO include context in final result...
-            return Sequence(sp(), Optional(context(context)), sp(),
-                    ZeroOrMore(rule(rules)), sp(), push(rules.get()), EOI);
+            return Sequence(push(new ArrayList<AstRule>()), sp(), Optional(context(context)), sp(),
+                    ZeroOrMore(rule()), sp(), EOI);
         }
-    }
-
-    public static void main(String[] args) {
-        String input = args.length > 0 ? args[0] : "\n@context (foo#bar);\n @import /* hi */ 'foo';\n@import 'bar';" +
-                ".class > #id[a = 'b'] (a + b + c) asdf { foo = 'test'; bar = 32; baz = 0.3; bum = 1e1 };";
-        CcsParser parser = Parboiled.createParser(CcsParser.class);
-        ParsingResult<?> result = new RecoveringParseRunner(parser.ruleset()).run(input);
-        if (!result.hasErrors())
-            System.out.println(ParseTreeUtils.printNodeTree(result));
-        else
-            System.out.println(ErrorUtils.printParseErrors(result));
     }
 }
