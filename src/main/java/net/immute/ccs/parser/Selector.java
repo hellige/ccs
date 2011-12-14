@@ -2,6 +2,10 @@ package net.immute.ccs.parser;
 
 import net.immute.ccs.dag.Key;
 import net.immute.ccs.dag.Node;
+import net.immute.ccs.dag.Tally;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class Selector {
     public abstract Node traverse(Node node);
@@ -25,7 +29,20 @@ public abstract class Selector {
         }
 
         @Override public Node traverse(Node node) {
-            throw new UnsupportedOperationException(); // TODO
+            Node firstNode = first.traverse(node);
+            Node secondNode = second.traverse(node);
+            Set<Tally> tallies = new HashSet<Tally>();
+            tallies.addAll(firstNode.getTallies());
+            tallies.retainAll(secondNode.getTallies());
+            assert tallies.isEmpty() || tallies.size() == 1;
+            if (tallies.isEmpty()) {
+                Tally tally = new Tally.AndTally(new Node(), new Node[] {firstNode, secondNode});
+                firstNode.addTally(tally);
+                secondNode.addTally(tally);
+                return tally.getNode();
+            } else {
+                return tallies.iterator().next().getNode();
+            }
         }
 
         @Override public Selector asDirectChild() {
@@ -43,7 +60,21 @@ public abstract class Selector {
         }
 
         @Override public Node traverse(Node node) {
-            throw new UnsupportedOperationException(); // TODO
+            // TODO kill this duplication...
+            Node firstNode = first.traverse(node);
+            Node secondNode = second.traverse(node);
+            Set<Tally> tallies = new HashSet<Tally>();
+            tallies.addAll(firstNode.getTallies());
+            tallies.retainAll(secondNode.getTallies());
+            assert tallies.isEmpty() || tallies.size() == 1;
+            if (tallies.isEmpty()) {
+                Tally tally = new Tally.OrTally(new Node(), new Node[] {firstNode, secondNode});
+                firstNode.addTally(tally);
+                secondNode.addTally(tally);
+                return tally.getNode();
+            } else {
+                return tallies.iterator().next().getNode();
+            }
         }
 
         @Override public Selector asDirectChild() {

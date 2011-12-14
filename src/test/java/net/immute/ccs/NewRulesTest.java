@@ -62,4 +62,32 @@ public class NewRulesTest {
         c = new SearchContext(c, "foo");
         assertEquals("correct", c.getString("test"));
     }
+
+    @Test
+    public void testConjunction() throws Exception {
+        Node root = load("conjunction.ccs");
+        SearchContext c = new SearchContext(root, "root");
+        c = new SearchContext(c, "a");
+        c = new SearchContext(c, "b");
+        assertEquals("correct1", c.getString("test"));
+        SearchContext c2 = new SearchContext(c, "c", null, "class1");
+        assertEquals("correct2", c2.getString("test"));
+
+        c2 = new SearchContext(c, "d");
+        assertEquals("correct3", c2.getString("test"));
+    }
+
+    @Test
+    public void testDisjunction() throws Exception {
+        Node root = load("disjunction.ccs");
+        SearchContext c = new SearchContext(root, "root");
+        c = new SearchContext(c, "a");
+        c = new SearchContext(c, "b");
+        c = new SearchContext(c, "c");
+        assertEquals("correct1", c.getString("test"));
+        c = new SearchContext(c, "c");
+        assertEquals("correct2", c.getString("test"));
+        c = new SearchContext(c, "c", null, "b");
+        assertEquals("correct1", c.getString("test"));
+    }
 }

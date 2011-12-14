@@ -13,6 +13,14 @@ public class Node {
     private final HashMap<String, List<CcsProperty>> props = new HashMap<String, List<CcsProperty>>();
     private final HashMap<String, List<CcsProperty>> localProps = new HashMap<String, List<CcsProperty>>();
 
+    public Set<Tally> getTallies() {
+        return tallies;
+    }
+
+    public void addTally(Tally tally) {
+        tallies.add(tally);
+    }
+
     public Node getChild(Key key) {
         return children.get(key);
     }

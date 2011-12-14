@@ -3,6 +3,7 @@ package net.immute.ccs.dag;
 import net.immute.ccs.SearchState;
 import net.immute.ccs.Specificity;
 
+// note: all comparisons of tallies should be by reference. don't implement equals/hashcode!
 public abstract class Tally {
     protected final Node[] legs;
     protected final Node node;
@@ -13,6 +14,10 @@ public abstract class Tally {
     }
 
     public abstract void activate(Node leg, Specificity spec, SearchState searchState);
+
+    public Node getNode() {
+        return node;
+    }
 
     // TODO move...
     public static class TallyState {
@@ -46,6 +51,7 @@ public abstract class Tally {
                     newSpecs[i] = spec; // TODO take the max!!!
                 } else {
                     newMatched[i] = matched[i];
+                    newSpecs[i] = specs[i];
                     if (!matched[i]) fullyMatched = false;
                 }
             }
