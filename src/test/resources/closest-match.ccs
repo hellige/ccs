@@ -1,7 +1,7 @@
 second third {
-    test: "correct";
+    test = "correct";
 }
 
 first third {
-    test: "incorrect";
+    test = "incorrect";
 }

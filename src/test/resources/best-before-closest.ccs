@@ -1,7 +1,7 @@
 second#id {
-    test: "correct"
+    test = "correct"
 }
 
 first second {
-    test: "incorrect"
+    test = "incorrect"
 }

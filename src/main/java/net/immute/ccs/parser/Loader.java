@@ -3,11 +3,11 @@ package net.immute.ccs.parser;
 import net.immute.ccs.CcsLogger;
 import net.immute.ccs.dag.Node;
 import org.parboiled.errors.ErrorUtils;
-import org.parboiled.support.ParseTreeUtils;
 import org.parboiled.support.ParsingResult;
 
 import java.io.*;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Loader {
@@ -30,26 +30,39 @@ public class Loader {
 
     public Node loadCcsStream(InputStream stream, String fileName, Node root, ImportResolver importResolver)
             throws IOException {
-        Reader reader = new InputStreamReader(stream);
-        ParsingResult<List<AstRule>> result = parser.parse(reader, fileName);
-        reader.close();
+        List<AstRule> rules = new ArrayList<AstRule>();
+        if (!parseCcsStream(rules, stream, fileName, importResolver)) return root;
 
-        if (result.hasErrors()) {
-            CcsLogger.error("Errors parsing " + fileName + ":" + ErrorUtils.printParseErrors(result));
-            return root;
-        }
-
-        System.out.println(ParseTreeUtils.printNodeTree(result));
-
-        // TODO resolve and parse imports, report error if any failures...
-
-        for (AstRule rule : result.resultValue) rule.addTo(root);
+        // everything parsed, no errors. now it's safe to modify the dag...
+        for (AstRule rule : rules) rule.addTo(root);
 
         return root;
     }
 
     public Node loadEmpty() {
         return new Node();
+    }
+
+    boolean parseCcsStream(List<AstRule> rules, InputStream stream, String fileName, ImportResolver importResolver)
+            throws IOException {
+        Reader reader = new InputStreamReader(stream);
+        ParsingResult<AstRule> result = parser.parse(reader, fileName);
+        reader.close();
+
+        if (result.hasErrors()) {
+            CcsLogger.error("Errors parsing " + fileName + ":" + ErrorUtils.printParseErrors(result));
+            return false;
+        }
+
+        AstRule rule = result.resultValue;
+
+        // resolve imports first, so they have lower property numbers...
+        if (!rule.resolveImports(rules, importResolver, this)) return false;
+
+        // then add the importing rule...
+        rules.add(rule);
+
+        return true;
     }
 
     public static void main(String[] args) throws Exception {

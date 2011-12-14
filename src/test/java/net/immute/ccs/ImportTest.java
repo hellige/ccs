@@ -1,8 +1,8 @@
 package net.immute.ccs;
 
-import net.immute.ccs.oldparser.Loader;
+import net.immute.ccs.dag.Node;
+import net.immute.ccs.parser.Loader;
 import net.immute.ccs.parser.ImportResolver;
-import net.immute.ccs.tree.Node;
 import org.junit.Test;
 
 import java.io.InputStream;

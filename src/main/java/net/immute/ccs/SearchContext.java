@@ -1,7 +1,7 @@
 package net.immute.ccs;
 
 import net.immute.ccs.tree.Key;
-import net.immute.ccs.tree.Node;
+import net.immute.ccs.dag.Node;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
