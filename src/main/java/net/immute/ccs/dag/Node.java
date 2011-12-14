@@ -4,7 +4,6 @@ import net.immute.ccs.CcsLogger;
 import net.immute.ccs.CcsProperty;
 import net.immute.ccs.SearchContext;
 import net.immute.ccs.Specificity;
-import net.immute.ccs.tree.Key;
 
 import java.util.ArrayList;
 import java.util.HashMap;

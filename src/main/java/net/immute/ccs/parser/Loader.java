@@ -19,7 +19,7 @@ public class Loader {
     }
 
     public Node loadCcsStream(InputStream stream, String fileName) throws IOException {
-        return loadCcsStream(stream, fileName, null);
+        return loadCcsStream(stream, fileName, new ImportResolver.Null());
     }
 
     public Node loadCcsStream(InputStream stream, String fileName, ImportResolver importResolver)

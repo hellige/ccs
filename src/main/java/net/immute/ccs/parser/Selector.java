@@ -1,7 +1,7 @@
 package net.immute.ccs.parser;
 
+import net.immute.ccs.dag.Key;
 import net.immute.ccs.dag.Node;
-import net.immute.ccs.tree.Key;
 
 public abstract class Selector {
     public abstract Node traverse(Node node);

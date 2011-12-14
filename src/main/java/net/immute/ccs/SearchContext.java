@@ -1,6 +1,6 @@
 package net.immute.ccs;
 
-import net.immute.ccs.tree.Key;
+import net.immute.ccs.dag.Key;
 import net.immute.ccs.dag.Node;
 
 import java.util.*;

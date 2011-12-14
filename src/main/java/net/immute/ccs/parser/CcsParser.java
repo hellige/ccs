@@ -1,7 +1,7 @@
 package net.immute.ccs.parser;
 
 import net.immute.ccs.Origin;
-import net.immute.ccs.tree.Key;
+import net.immute.ccs.dag.Key;
 import org.parboiled.BaseParser;
 import org.parboiled.Parboiled;
 import org.parboiled.Rule;

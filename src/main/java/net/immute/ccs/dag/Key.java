@@ -1,4 +1,4 @@
-package net.immute.ccs.tree;
+package net.immute.ccs.dag;
 
 import net.immute.ccs.NoSuchPropertyException;
 import net.immute.ccs.SearchContext;
