@@ -12,8 +12,8 @@ import java.util.Set;
 public class Key {
     private final Map<String, String> attributes = new HashMap<String, String>();
     private final Set<String> classes = new HashSet<String>();
-    private final Specificity specificity = new Specificity();
 
+    private Specificity specificity;
     private String element;
     private String id;
     private boolean root;
@@ -23,12 +23,13 @@ public class Key {
         this.element = element;
         root = false;
         directChild = false;
+        specificity = new Specificity();
         if (element != null) {
-            specificity.incElementNames();
+            specificity = specificity.incElementNames();
         }
         for (String cls : classes) {
             this.classes.add(cls);
-            specificity.incClassSelectors();
+            specificity = specificity.incClassSelectors();
         }
     }
 
@@ -36,7 +37,7 @@ public class Key {
         this.element = element;
         if (element != null) {
             // TODO not quite right...
-            specificity.incElementNames();
+            specificity = specificity.incElementNames();
         }
     }
 
@@ -46,7 +47,7 @@ public class Key {
 
     public void setId(String id) {
         this.id = id;
-        specificity.incIdSelectors();
+        specificity = specificity.incIdSelectors();
     }
 
     public void setDirectChild(boolean directChild) {
@@ -55,17 +56,17 @@ public class Key {
 
     public void setRoot(boolean root) {
         this.root = root;
-        specificity.incClassSelectors();
+        specificity = specificity.incClassSelectors();
     }
 
     public void setAttribute(String key, String value) {
         attributes.put(key, value);
-        specificity.incClassSelectors();
+        specificity = specificity.incClassSelectors();
     }
 
     public void addClass(String cls) {
         classes.add(cls);
-        specificity.incClassSelectors();
+        specificity = specificity.incClassSelectors();
     }
 
     /**

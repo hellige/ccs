@@ -1,6 +1,7 @@
 package net.immute.ccs.parser;
 
 import net.immute.ccs.CcsLogger;
+import net.immute.ccs.dag.Dag;
 import net.immute.ccs.dag.Node;
 import org.parboiled.errors.ErrorUtils;
 import org.parboiled.support.ParsingResult;
@@ -24,19 +25,18 @@ public class Loader {
 
     public Node loadCcsStream(InputStream stream, String fileName, ImportResolver importResolver)
             throws IOException {
-        Node root = new Node();
-        return loadCcsStream(stream, fileName, root, importResolver);
+        return loadCcsStream(stream, fileName, new Dag(), importResolver);
     }
 
-    public Node loadCcsStream(InputStream stream, String fileName, Node root, ImportResolver importResolver)
+    public Node loadCcsStream(InputStream stream, String fileName, Dag dag, ImportResolver importResolver)
             throws IOException {
         List<AstRule> rules = new ArrayList<AstRule>();
-        if (!parseCcsStream(rules, stream, fileName, importResolver)) return root;
+        if (!parseCcsStream(rules, stream, fileName, importResolver)) return dag.getRoot();
 
         // everything parsed, no errors. now it's safe to modify the dag...
-        for (AstRule rule : rules) rule.addTo(root);
+        for (AstRule rule : rules) rule.addTo(dag, dag.getRoot());
 
-        return root;
+        return dag.getRoot();
     }
 
     public Node loadEmpty() {

@@ -1,23 +1,17 @@
 package net.immute.ccs.dag;
 
-import net.immute.ccs.CcsLogger;
-import net.immute.ccs.CcsProperty;
-import net.immute.ccs.SearchContext;
-import net.immute.ccs.Specificity;
+import net.immute.ccs.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.SortedMap;
+import java.util.*;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.frequency;
 
 public class Node {
     private final HashMap<Key, Node> children = new HashMap<Key, Node>();
-    private final HashMap<String, List<CcsProperty>> props =
-        new HashMap<String, List<CcsProperty>>();
-    private final HashMap<String, List<CcsProperty>> localProps =
-        new HashMap<String, List<CcsProperty>>();
+    private final Set<Tally> tallies = new HashSet<Tally>();
+    private final HashMap<String, List<CcsProperty>> props = new HashMap<String, List<CcsProperty>>();
+    private final HashMap<String, List<CcsProperty>> localProps = new HashMap<String, List<CcsProperty>>();
 
     public Node getChild(Key key) {
         return children.get(key);
@@ -41,24 +35,24 @@ public class Node {
         }
     }
 
+    public void getChildren(Key key, Specificity spec, SearchContext sc,
+                            boolean includeDirectChildren, SearchState searchState) {
+        for (Map.Entry<Key, Node> entry : children.entrySet())
+            if (entry.getKey().matches(key, sc, includeDirectChildren))
+                entry.getValue().activate(spec.add(entry.getKey().getSpecificity()), searchState);
+    }
+
+    // TODO does returning the whole list here really buy anything? i think not...
     public List<CcsProperty> getProperty(String name, boolean locals) {
         List<CcsProperty> values = null;
-        if (locals) {
-            values = localProps.get(name);
-        }
-        if (values == null) {
-            values = props.get(name);
-        }
-        if (values == null) {
-            values = emptyList();
-        }
+        if (locals) values = localProps.get(name);
+        if (values == null) values = props.get(name);
+        if (values == null) values = emptyList();
         return values;
     }
 
     public void addProperty(String name, CcsProperty value, boolean isLocal) {
-        HashMap<String, List<CcsProperty>> theProps;
-        if (isLocal) theProps = localProps;
-        else theProps = props;
+        HashMap<String, List<CcsProperty>> theProps = isLocal ? localProps : props;
         List<CcsProperty> values = theProps.get(name);
         if (values == null) {
             values = new ArrayList<CcsProperty>();
@@ -70,5 +64,10 @@ public class Node {
                     + ". Using new value.");
         }
         values.add(value);
+    }
+
+    public void activate(Specificity spec, SearchState searchState) {
+        searchState.add(spec, this);
+        for (Tally tally : this.tallies) tally.activate(this, spec, searchState);
     }
 }

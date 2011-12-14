@@ -3,6 +3,7 @@ package net.immute.ccs.parser;
 import net.immute.ccs.CcsLogger;
 import net.immute.ccs.CcsProperty;
 import net.immute.ccs.Origin;
+import net.immute.ccs.dag.Dag;
 import net.immute.ccs.dag.Node;
 
 import java.io.IOException;
@@ -10,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public interface AstRule {
-    void addTo(Node node);
+    void addTo(Dag dag, Node node);
     boolean resolveImports(List<AstRule> results, ImportResolver importResolver, Loader loader);
 
     public static class Import implements AstRule {
@@ -20,11 +21,12 @@ public interface AstRule {
             this.location = location;
         }
 
-        @Override public void addTo(Node node) {}
+        @Override public void addTo(Dag dag, Node node) {}
 
         @Override
         public boolean resolveImports(List<AstRule> results, ImportResolver importResolver, Loader loader) {
             try {
+                // TODO check for circular imports...
                 // TODO add context...
                 if (!loader.parseCcsStream(results, importResolver.resolve(location), location, importResolver))
                     return false;
@@ -49,8 +51,8 @@ public interface AstRule {
         }
 
         @Override
-        public void addTo(Node node) {
-            node.addProperty(name, new CcsProperty(value.toString(), origin, 0), true); // TODO property number
+        public void addTo(Dag dag, Node node) {
+            node.addProperty(name, new CcsProperty(value.toString(), origin, dag.nextProperty()), true);
         }
 
         @Override
@@ -79,9 +81,9 @@ public interface AstRule {
         }
 
         @Override
-        public void addTo(Node node) {
+        public void addTo(Dag dag, Node node) {
             Node next = selector == null ? node : selector.traverse(node);
-            for (AstRule rule : rules) rule.addTo(next);
+            for (AstRule rule : rules) rule.addTo(dag, next);
         }
 
         @Override
