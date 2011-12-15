@@ -12,6 +12,40 @@ public class NewRulesTest {
     }
 
     @Test
+    public void oldFunctionalTest() throws Exception {
+        SearchContext root = load("test.ccs");
+
+        SearchContext c = new SearchContext(root, "hi");
+        c = new SearchContext(c, "body");
+        c = new SearchContext(c, "bar");
+        c = new SearchContext(c, "em");
+        SearchContext c2 = new SearchContext(c, "baz");
+        assertEquals("hi", c.getString("foo"));
+        assertEquals("there", c2.getString("foo"));
+        assertEquals("hi", c.getString("foo"));
+        SearchContext c3 = new SearchContext(c, "blah");
+        assertEquals("hi", c3.getString("foo"));
+        SearchContext c4 = new SearchContext(c2, "em");
+        assertEquals("!", c4.getString("foo"));
+
+        c = new SearchContext(root, "hi");
+        c = new SearchContext(c, "body", "doit");
+        c = new SearchContext(c, "bar");
+        c = new SearchContext(c, "em", null, "foo");
+        c2 = new SearchContext(c, "baz");
+        assertEquals("hi", c.getString("foo"));
+        assertEquals("there", c2.getString("foo"));
+        assertEquals("hi", c.getString("foo"));
+        c3 = new SearchContext(c, "blah");
+        assertEquals("hi", c3.getString("foo"));
+        c4 = new SearchContext(c2, "em");
+        assertEquals("ARGH", c4.getString("foo"));
+        assertEquals("WTF", c4.getString("rootTest"));
+        assertEquals("c", c4.getString("childTest"));
+        assertEquals("b", c4.getString("classTest"));
+    }
+
+    @Test
     public void testBestBeforeClosest() throws Exception {
         SearchContext c = load("best-before-closest.ccs");
         c = new SearchContext(c, "first");
@@ -105,6 +139,12 @@ public class NewRulesTest {
         c = new SearchContext(c, "b");
         c = new SearchContext(c, "a");
         assertEquals("bottom", c.getString("test"));
+
+        SearchContext c2 = new SearchContext(c, "e");
+        c2 = new SearchContext(c2, "c");
+        c2 = new SearchContext(c2, "b");
+        c2 = new SearchContext(c2, "d");
+        assertEquals("bottom", c2.getString("test2"));
     }
 
     @Test
@@ -129,5 +169,21 @@ public class NewRulesTest {
         assertEquals("local", c.getString("test"));
         c = new SearchContext(c, "b");
         assertEquals("heritable", c.getString("test"));
+    }
+
+    @Test
+    public void testOrderDependentDisj() throws Exception {
+        SearchContext root = load("order-dependent-disj.ccs");
+        SearchContext c = new SearchContext(root, "b");
+        assertEquals(2, c.getInt("x"));
+
+        c = new SearchContext(root, "a");
+        c = new SearchContext(c, "c");
+        c = new SearchContext(c, "d");
+        assertEquals(1, c.getInt("x"));
+
+        c = new SearchContext(root, "d");
+        c = new SearchContext(c, "f");
+        assertEquals(2, c.getInt("y"));
     }
 }
