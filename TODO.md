@@ -1,15 +1,9 @@
   - add important!: search upward important, then search upward normal
-  - inherit vs. local, what's the right default?
-  - merging sources into same tree
   - settings based on filename?
-  - @prefix or similar
   - interpolation
-  - single quotes to enclose non-ident names
-  - inherit/local
   - trace (sys prop to path?)
   - pluggable logging
   - eager vs lazy search (pre-compute all props for given context)
   - dump all prop values with origin (in priority order)
   - functional test framework (file-driven)
-  - C++-style single-line comments
-  - make commas work
+  - split building from using to clarify api...
