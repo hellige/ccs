@@ -1,0 +1,4 @@
+first {
+  @import "imported.ccs";
+  test = 'outer';
+}

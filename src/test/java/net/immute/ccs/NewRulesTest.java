@@ -16,16 +16,6 @@ public class NewRulesTest {
     }
 
     @Test
-    @Ignore("this behavior has changed")
-    public void testClosestMatch() throws Exception {
-        Node root = load("closest-match.ccs");
-        SearchContext c = new SearchContext(root, "first");
-        c = new SearchContext(c, "second");
-        c = new SearchContext(c, "third");
-        assertEquals("correct", c.getString("test"));
-    }
-
-    @Test
     public void testBestBeforeClosest() throws Exception {
         Node root = load("best-before-closest.ccs");
         SearchContext c = new SearchContext(root, "first");
@@ -42,7 +32,6 @@ public class NewRulesTest {
     }
 
     @Test
-    //@Ignore("not working until new stuff is a bit farther along...")
     public void testComplexTie() throws Exception {
         Node root = load("complex-tie.ccs");
         SearchContext c = new SearchContext(root, "root");
@@ -89,5 +78,26 @@ public class NewRulesTest {
         assertEquals("correct2", c.getString("test"));
         c = new SearchContext(c, "c", null, "b");
         assertEquals("correct1", c.getString("test"));
+    }
+
+    @Test
+    public void testContext() throws Exception {
+        Node root = load("context.ccs");
+        SearchContext c = new SearchContext(root, "root");
+        c = new SearchContext(c, "b");
+        c = new SearchContext(c, "a");
+        assertEquals("correct1", c.getString("test"));
+        c = new SearchContext(c, "b");
+        c = new SearchContext(c, "a");
+        assertEquals("correct2", c.getString("test"));
+    }
+
+    @Test
+    public void testTrailingCombinator() throws Exception {
+        Node root = load("trailing-combinator.ccs");
+        SearchContext c = new SearchContext(root, "root");
+        c = new SearchContext(c, "b");
+        c = new SearchContext(c, "a");
+        assertEquals("bottom", c.getString("test"));
     }
 }

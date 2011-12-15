@@ -1,7 +1,0 @@
-second third {
-    test = "correct";
-}
-
-first third {
-    test = "incorrect";
-}

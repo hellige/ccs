@@ -8,8 +8,6 @@ import org.parboiled.support.ParsingResult;
 
 import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Loader {
     CcsParser parser = new CcsParser();
@@ -30,11 +28,11 @@ public class Loader {
 
     public Node loadCcsStream(InputStream stream, String fileName, Dag dag, ImportResolver importResolver)
             throws IOException {
-        List<AstRule> rules = new ArrayList<AstRule>();
-        if (!parseCcsStream(rules, stream, fileName, importResolver)) return dag.getRoot();
+        AstRule rule = parseCcsStream(stream, fileName, importResolver);
+        if (rule == null) return dag.getRoot();
 
         // everything parsed, no errors. now it's safe to modify the dag...
-        for (AstRule rule : rules) rule.addTo(dag, dag.getRoot());
+        rule.addTo(dag.getBuildContext(), dag.getBuildContext());
 
         return dag.getRoot();
     }
@@ -43,7 +41,7 @@ public class Loader {
         return new Node();
     }
 
-    boolean parseCcsStream(List<AstRule> rules, InputStream stream, String fileName, ImportResolver importResolver)
+    AstRule parseCcsStream(InputStream stream, String fileName, ImportResolver importResolver)
             throws IOException {
         Reader reader = new InputStreamReader(stream);
         ParsingResult<AstRule> result = parser.parse(reader, fileName);
@@ -51,18 +49,13 @@ public class Loader {
 
         if (result.hasErrors()) {
             CcsLogger.error("Errors parsing " + fileName + ":" + ErrorUtils.printParseErrors(result));
-            return false;
+            return null;
         }
 
         AstRule rule = result.resultValue;
+        if (!rule.resolveImports(importResolver, this)) return null;
 
-        // resolve imports first, so they have lower property numbers...
-        if (!rule.resolveImports(rules, importResolver, this)) return false;
-
-        // then add the importing rule...
-        rules.add(rule);
-
-        return true;
+        return rule;
     }
 
     public static void main(String[] args) throws Exception {

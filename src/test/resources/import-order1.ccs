@@ -1,0 +1,2 @@
+first { test = 'first' }
+@import "imported.ccs"

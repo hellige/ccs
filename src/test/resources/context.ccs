@@ -1,0 +1,4 @@
+@context (a)
+
+test = 'correct1';
+b a { test = 'correct2'; }

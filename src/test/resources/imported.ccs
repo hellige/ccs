@@ -1,3 +1,1 @@
-/* TODO infinite @import "imported.ccs";*/
-
-* { test = "correct" }
+first { test = "correct" }

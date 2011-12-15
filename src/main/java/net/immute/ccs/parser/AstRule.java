@@ -1,41 +1,42 @@
 package net.immute.ccs.parser;
 
 import net.immute.ccs.CcsLogger;
-import net.immute.ccs.CcsProperty;
 import net.immute.ccs.Origin;
-import net.immute.ccs.dag.Dag;
-import net.immute.ccs.dag.Node;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public interface AstRule {
-    void addTo(Dag dag, Node node);
-    boolean resolveImports(List<AstRule> results, ImportResolver importResolver, Loader loader);
+    void addTo(BuildContext buildContext, BuildContext baseContext);
+    boolean resolveImports(ImportResolver importResolver, Loader loader);
 
     public static class Import implements AstRule {
         private final String location;
+
+        private AstRule ast;
 
         public Import(String location) {
             this.location = location;
         }
 
-        @Override public void addTo(Dag dag, Node node) {}
+        @Override
+        public void addTo(BuildContext buildContext, BuildContext baseContext) {
+            assert ast != null;
+            ast.addTo(buildContext, baseContext);
+        }
 
         @Override
-        public boolean resolveImports(List<AstRule> results, ImportResolver importResolver, Loader loader) {
+        public boolean resolveImports(ImportResolver importResolver, Loader loader) {
             try {
                 // TODO check for circular imports...
-                // TODO add context...
-                if (!loader.parseCcsStream(results, importResolver.resolve(location), location, importResolver))
-                    return false;
+                ast = loader.parseCcsStream(importResolver.resolve(location), location, importResolver);
+                if (ast != null) return true;
             } catch (IOException e) {
                 CcsLogger.error(String.format("Error loading imported document '%s': %s", location, e.toString()));
                 // TODO maybe a stack trace or something too?
-                return false;
             }
-            return true;
+            return false;
         }
     }
 
@@ -51,26 +52,26 @@ public interface AstRule {
         }
 
         @Override
-        public void addTo(Dag dag, Node node) {
-            node.addProperty(name, new CcsProperty(value.toString(), origin, dag.nextProperty()), true);
+        public void addTo(BuildContext buildContext, BuildContext _) {
+            buildContext.addProperty(name, value, origin, true);
         }
 
         @Override
-        public boolean resolveImports(List<AstRule> results, ImportResolver importResolver, Loader loader) {
+        public boolean resolveImports(ImportResolver _, Loader __) {
             return true;
         }
     }
 
     public static class Nested implements AstRule {
         private final List<AstRule> rules = new ArrayList<AstRule>();
-        private Selector selector;
+        private SelectorBranch selector;
 
-        public Nested(Selector selector) {
+        public Nested(SelectorBranch selector) {
             this.selector = selector;
         }
 
         // these return boolean for ease of use with parboiled...
-        boolean setSelector(Selector selector) {
+        boolean setSelector(SelectorBranch selector) {
             this.selector = selector;
             return true;
         }
@@ -81,16 +82,14 @@ public interface AstRule {
         }
 
         @Override
-        public void addTo(Dag dag, Node node) {
-            Node next = selector == null ? node : selector.traverse(node);
-            for (AstRule rule : rules) rule.addTo(dag, next);
+        public void addTo(BuildContext buildContext, BuildContext baseContext) {
+            if (selector != null) buildContext = selector.traverse(buildContext, baseContext);
+            for (AstRule rule : rules) rule.addTo(buildContext, baseContext);
         }
 
         @Override
-        public boolean resolveImports(List<AstRule> results, ImportResolver importResolver, Loader loader) {
-            // TODO add context...
-            for (AstRule rule : rules)
-                if (!rule.resolveImports(results, importResolver, loader)) return false;
+        public boolean resolveImports(ImportResolver importResolver, Loader loader) {
+            for (AstRule rule : rules) if (!rule.resolveImports(importResolver, loader)) return false;
             return true;
         }
     }

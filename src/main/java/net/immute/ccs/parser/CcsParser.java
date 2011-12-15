@@ -108,7 +108,7 @@ public class CcsParser {
         }
     }
 
-    static class SelectorParser extends CcsBaseParser<Selector> {
+    static class SelectorParser extends CcsBaseParser<SelectorLeaf> {
         protected boolean setElement(Var<Key> key, String element) {
             key.get().setElement(element);
             return true;
@@ -147,23 +147,25 @@ public class CcsParser {
             // to work in jarjar. which we do.
             return Sequence(key.set(new Key(null)), FirstOf(
                     Sequence(FirstOf('*', Sequence(ident(tmp), setElement(key, tmp.get()))), Optional(stepsuffix(key)),
-                            push(new Selector.Step(key.get()))),
-                    Sequence(stepsuffix(key), push(new Selector.Step(key.get()))),
+                            push(new SelectorLeaf.Step(key.get()))),
+                    Sequence(stepsuffix(key), push(new SelectorLeaf.Step(key.get()))),
                     Sequence('(', sum(), ')')));
         }
 
         Rule term() {
             return Sequence(step(), ZeroOrMore(sp(), FirstOf(
-                    Sequence('>', sp(), step(), push(new Selector.Descendant(pop(1), pop().asDirectChild()))),
-                    Sequence(step(), push(new Selector.Descendant(pop(1), pop()))))));
+                    Sequence('>', sp(), step(), push(pop(1).descendant(pop().asDirectChild()))),
+                    Sequence(step(), push(pop(1).descendant(pop()))))));
         }
 
         Rule product() {
-            return Sequence(term(), ZeroOrMore(sp(), '+', sp(), term(), push(pop(1).conjoin(pop()))));
+            return Sequence(term(), ZeroOrMore(sp(), '+', sp(), term(),
+                    push(pop(1).conjunction(pop()))));
         }
 
         Rule sum() {
-            return Sequence(product(), ZeroOrMore(Sequence(sp(), ',', sp(), product(), push(pop(1).disjoin(pop())))));
+            return Sequence(product(), ZeroOrMore(Sequence(sp(), ',', sp(), product(),
+                    push(pop(1).disjunction(pop())))));
         }
     }
 
@@ -187,8 +189,9 @@ public class CcsParser {
                     // TODO qi::lexeme[val >> !ident];
         }
 
-        Rule selector(Var<Selector> result) {
-            return Sequence(selectorParser.sum(), sp(), Optional(AnyOf("+>")), result.set(selectorParser.pop())); // TODO +>
+        Rule selector(Var<SelectorBranch> result) {
+            return Sequence(selectorParser.sum(), sp(), Optional(AnyOf("+>")),
+                    result.set(new SelectorBranch.Descendant(selectorParser.pop()))); // TODO +>
         }
 
         Rule imprt() {
@@ -198,7 +201,7 @@ public class CcsParser {
         }
 
         Rule nested() {
-            Var<Selector> selector = new Var<Selector>();
+            Var<SelectorBranch> selector = new Var<SelectorBranch>();
             return Sequence(selector(selector), sp(), '{', sp(),
                     push(new AstRule.Nested(selector.get())), ZeroOrMore(rule()), '}',
                     peek(1).append(pop()));
@@ -210,7 +213,7 @@ public class CcsParser {
         }
 
         Rule context() {
-            Var<Selector> tmp = new Var<Selector>();
+            Var<SelectorBranch> tmp = new Var<SelectorBranch>();
             return Sequence("@context", sp(), '(', sp(), selector(tmp), sp(), ')',
                     sp(), Optional(';'), sp(), peek().setSelector(tmp.get()));
         }
