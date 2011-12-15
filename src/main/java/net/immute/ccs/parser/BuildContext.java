@@ -37,7 +37,7 @@ public abstract class BuildContext {
         }
 
         @Override public Node traverse(SelectorLeaf selector) {
-            return selector.traverse(this, this);  // TODO i think this is wrong
+            return selector.traverse(this);
         }
 
         @Override public Node getNode() {
@@ -45,53 +45,55 @@ public abstract class BuildContext {
         }
     }
 
-    public BuildContext disjunction(final Node node, final BuildContext baseContext) {
-        return new BuildContext(dag) {
-            @Override public Node traverse(SelectorLeaf selector) {
-                // TODO kill this duplication...
-                Node firstNode = node;
-                Node secondNode = selector.traverse(baseContext, baseContext);  // TODO i think this is wrong
-                Set<Tally> tallies = new HashSet<Tally>();
-                tallies.addAll(firstNode.getTallies());
-                tallies.retainAll(secondNode.getTallies());
-                assert tallies.isEmpty() || tallies.size() == 1;
-                if (tallies.isEmpty()) {
-                    Tally tally = new Tally.OrTally(new Node(), new Node[] {firstNode, secondNode});
-                    firstNode.addTally(tally);
-                    secondNode.addTally(tally);
-                    return tally.getNode();
-                } else {
-                    return tallies.iterator().next().getNode();
-                }
-            }
+    private static abstract class TallyBuildContext extends BuildContext {
+        private final Node firstNode;
+        private final BuildContext baseContext;
 
-            @Override public Node getNode() {
-                return node;
+        abstract protected Tally newTally(Node firstNode, Node secondNode);
+
+        public TallyBuildContext(Dag dag, Node node, BuildContext baseContext) {
+            super(dag);
+            this.firstNode = node;
+            this.baseContext = baseContext;
+        }
+
+        @Override
+        public Node traverse(SelectorLeaf selector) {
+            Node secondNode = selector.traverse(baseContext);
+            Set<Tally> tallies = new HashSet<Tally>();
+            tallies.addAll(firstNode.getTallies());
+            tallies.retainAll(secondNode.getTallies());
+            assert tallies.isEmpty() || tallies.size() == 1;
+            if (tallies.isEmpty()) {
+                Tally tally = newTally(firstNode, secondNode);
+                firstNode.addTally(tally);
+                secondNode.addTally(tally);
+                return tally.getNode();
+            } else {
+                return tallies.iterator().next().getNode();
+            }
+        }
+
+        @Override
+        public Node getNode() {
+            return firstNode;
+        }
+    }
+
+    public BuildContext disjunction(final Node node, final BuildContext baseContext) {
+        return new TallyBuildContext(dag, node, baseContext) {
+            @Override
+            protected Tally.OrTally newTally(Node firstNode, Node secondNode) {
+                return new Tally.OrTally(new Node(), new Node[] {firstNode, secondNode});
             }
         };
     }
 
     public BuildContext conjunction(final Node node, final BuildContext baseContext) {
-        return new BuildContext(dag) {
-            @Override public Node traverse(SelectorLeaf selector) {
-                Node firstNode = node;
-                Node secondNode = selector.traverse(baseContext, baseContext);  // TODO i think this is wrong
-                Set<Tally> tallies = new HashSet<Tally>();
-                tallies.addAll(firstNode.getTallies());
-                tallies.retainAll(secondNode.getTallies());
-                assert tallies.isEmpty() || tallies.size() == 1;
-                if (tallies.isEmpty()) {
-                    Tally tally = new Tally.AndTally(new Node(), new Node[] {firstNode, secondNode});
-                    firstNode.addTally(tally);
-                    secondNode.addTally(tally);
-                    return tally.getNode();
-                } else {
-                    return tallies.iterator().next().getNode();
-                }
-            }
-
-            @Override public Node getNode() {
-                return node;
+        return new TallyBuildContext(dag, node, baseContext) {
+            @Override
+            protected Tally.AndTally newTally(Node firstNode, Node secondNode) {
+                return new Tally.AndTally(new Node(), new Node[] {firstNode, secondNode});
             }
         };
     }

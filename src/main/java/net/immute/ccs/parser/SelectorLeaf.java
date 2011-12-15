@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public interface SelectorLeaf {
-    Node traverse(BuildContext context, BuildContext baseContext);
+    Node traverse(BuildContext context);
     SelectorLeaf asDirectChild();
     SelectorLeaf descendant(SelectorLeaf pop);
     SelectorLeaf conjunction(SelectorLeaf pop);
@@ -20,7 +20,7 @@ public interface SelectorLeaf {
             this.key = key;
         }
 
-        @Override public Node traverse(BuildContext context, BuildContext _) {
+        @Override public Node traverse(BuildContext context) {
             Node node = context.getNode();
             Node tmpNode = node.getChild(key);
             if (tmpNode == null) {
@@ -58,9 +58,10 @@ public interface SelectorLeaf {
             this.right = right;
         }
 
-        @Override public Node traverse(BuildContext context, BuildContext baseContext) {
-            for (SelectorBranch branch : branches) context = branch.traverse(context, baseContext);
-            return right.traverse(context, context); // NB: this is where baseContext changes...
+        @Override public Node traverse(BuildContext context) {
+            BuildContext tmp = context;
+            for (SelectorBranch branch : branches) tmp = branch.traverse(tmp, context);
+            return tmp.traverse(right);
         }
 
         @Override public SelectorLeaf asDirectChild() {
@@ -74,13 +75,13 @@ public interface SelectorLeaf {
         }
 
         @Override public SelectorLeaf conjunction(SelectorLeaf right) {
-            branches.add(new SelectorBranch.Descendant(this.right));
+            branches.add(new SelectorBranch.Conjunction(this.right));
             this.right = right;
             return this;
         }
 
         @Override public SelectorLeaf disjunction(SelectorLeaf right) {
-            branches.add(new SelectorBranch.Descendant(this.right));
+            branches.add(new SelectorBranch.Disjunction(this.right));
             this.right = right;
             return this;
         }

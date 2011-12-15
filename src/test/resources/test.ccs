@@ -10,10 +10,10 @@ baz em { foo = "!" }
 
 baz[root="worked"] { rootTest = "WTF" }
 
-* { childTest = 'a' }
+childTest = 'a'
 em#foo > baz { childTest = 'b' }
 em > baz { childTest = 'c' }
 * bar > baz { childTest = 'd' }
 
-* { classTest = 'a' }
+classTest = 'a'
 em.foo > baz { classTest = 'b' }

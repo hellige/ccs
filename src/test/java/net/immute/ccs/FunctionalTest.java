@@ -20,9 +20,8 @@ public class FunctionalTest {
         assertEquals("hi", c.getString("foo"));
         assertEquals("there", c2.getString("foo"));
         assertEquals("hi", c.getString("foo"));
-        // TODO inheritance is disabled for now
-        //SearchContext c3 = new SearchContext(c, "blah");
-        //assertEquals("hi", c3.getString("foo"));
+        SearchContext c3 = new SearchContext(c, "blah");
+        assertEquals("hi", c3.getString("foo"));
         SearchContext c4 = new SearchContext(c2, "em");
         assertEquals("!", c4.getString("foo"));
 
@@ -34,13 +33,12 @@ public class FunctionalTest {
         assertEquals("hi", c.getString("foo"));
         assertEquals("there", c2.getString("foo"));
         assertEquals("hi", c.getString("foo"));
-        // TODO inheritance is disabled for now
-        //c3 = new SearchContext(c, "blah");
-        //assertEquals("hi", c3.getString("foo"));
-        //c4 = new SearchContext(c2, "em");
-        //assertEquals("ARGH", c4.getString("foo"));
-        //assertEquals("WTF", c4.getString("rootTest"));
-        //assertEquals("c", c4.getString("childTest"));
-        //assertEquals("b", c4.getString("classTest"));
+        c3 = new SearchContext(c, "blah");
+        assertEquals("hi", c3.getString("foo"));
+        c4 = new SearchContext(c2, "em");
+        assertEquals("ARGH", c4.getString("foo"));
+        assertEquals("WTF", c4.getString("rootTest"));
+        assertEquals("c", c4.getString("childTest"));
+        assertEquals("b", c4.getString("classTest"));
     }
 }

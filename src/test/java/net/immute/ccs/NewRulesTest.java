@@ -100,4 +100,19 @@ public class NewRulesTest {
         c = new SearchContext(c, "a");
         assertEquals("bottom", c.getString("test"));
     }
+
+    @Test
+    public void testDirectChild() throws Exception {
+        Node root = load("direct-child.ccs");
+        SearchContext c = new SearchContext(root, "root");
+        c = new SearchContext(c, "a");
+        c = new SearchContext(c, "b");
+        assertEquals("inner", c.getString("test"));
+
+        c = new SearchContext(root, "root");
+        c = new SearchContext(c, "a");
+        c = new SearchContext(c, "c");
+        c = new SearchContext(c, "b");
+        assertEquals("outer", c.getString("test"));
+    }
 }

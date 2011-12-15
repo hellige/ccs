@@ -178,20 +178,23 @@ public class CcsParser {
             this.fileName = fileName;
         }
 
-        // TODO consider explicit 'override'
         Rule property() {
+            Var<Boolean> local = new Var<Boolean>();
             Var<String> name = new Var<String>();
             Var<Value<?>> value = new Var<Value<?>>();
-            // TODO do something with "inherit"...
-            return Sequence(Optional("inherit"), sp(), ident(name), sp(), '=', sp(), val(value),
-                    peek().append(new AstRule.PropDef(name.get(), value.get(), new Origin(fileName, position().line))),
+            return Sequence(local.set(false), Optional("local", local.set(true)), sp(), ident(name), sp(), '=',
+                    sp(), val(value), peek().append(
+                    new AstRule.PropDef(name.get(), value.get(), new Origin(fileName, position().line), local.get())),
                     sp()); // put space after the append() so that we're sure to have the right line number...
                     // TODO qi::lexeme[val >> !ident];
         }
 
         Rule selector(Var<SelectorBranch> result) {
-            return Sequence(selectorParser.sum(), sp(), Optional(AnyOf("+>")),
-                    result.set(new SelectorBranch.Descendant(selectorParser.pop()))); // TODO +>
+            Var<Boolean> conj = new Var<Boolean>();
+            return Sequence(conj.set(false), selectorParser.sum(), sp(), Optional("+", conj.set(true)),
+                    result.set(conj.get()
+                            ? new SelectorBranch.Conjunction(selectorParser.pop())
+                            : new SelectorBranch.Descendant(selectorParser.pop())));
         }
 
         Rule imprt() {
