@@ -11,7 +11,10 @@ import static java.util.Collections.singletonList;
 
 public class SearchState {
     private final SortedMap<Specificity, List<Node>> nodes = new TreeMap<Specificity, List<Node>>(reverseOrder());
+
     private final TallyMap tallyMap;
+    private final CcsLogger log;
+    private final SearchContext searchContext;
 
     private static final Comparator<CcsProperty> PROP_COMPARATOR =
             new Comparator<CcsProperty>() {
@@ -20,19 +23,38 @@ public class SearchState {
                 }
             };
 
-    public SearchState(Node root) {
+    public SearchState(Node root, SearchContext searchContext, CcsLogger log) {
         nodes.put(new Specificity(), singletonList(root));
         tallyMap = new TallyMap();
+        this.searchContext = searchContext;
+        this.log = log;
     }
 
-    public SearchState(SearchState searchState) {
-        tallyMap = new TallyMap(searchState.tallyMap);
+    private SearchState(TallyMap tallyMap, SearchContext searchContext, CcsLogger log) {
+        this.tallyMap = tallyMap;
+        this.searchContext = searchContext;
+        this.log = log;
+    }
+
+    public SearchState newChild(SearchContext searchContext) {
+        return new SearchState(new TallyMap(tallyMap), searchContext, log);
     }
 
     public void extend(Key key, SearchContext context, boolean includeDirectChildren, SearchState nextState) {
         for (Map.Entry<Specificity, List<Node>> entry : nodes.entrySet())
             for (Node n : entry.getValue())
                 n.getChildren(key, entry.getKey(), context, includeDirectChildren, nextState);
+    }
+
+    private String origins(List<CcsProperty> values) {
+        StringBuilder b = new StringBuilder();
+        boolean first = true;
+        for (CcsProperty v : values) {
+            if (!first) b.append(", ");
+            b.append(v.getOrigin());
+            first = false;
+        }
+        return b.toString();
     }
 
     public CcsProperty findProperty(String propertyName, boolean locals) {
@@ -43,9 +65,12 @@ public class SearchState {
             if (values.size() == 1)
                 return values.get(0);
             else if (values.size() > 1) {
-                // TODO make warning optional and add info about conflicting settings
-                CcsLogger.warn("Relying on declaration order to resolve ambiguity. Are you sure you want this?");
-                return Collections.max(values, PROP_COMPARATOR);
+                Collections.sort(values, PROP_COMPARATOR);
+                log.warn("Conflict detected for property: " + propertyName
+                        + " in context [" + searchContext.toString() + "]. "
+                        + "Conflicting settings at: [" + origins(values) + "]. "
+                        + "Using most recent value.");
+                return values.get(values.size()-1);
             }
         }
         return null;

@@ -1,8 +1,5 @@
 package net.immute.ccs;
 
-import net.immute.ccs.parser.Loader;
-import net.immute.ccs.dag.Node;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -10,31 +7,29 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 
 public class NewRulesTest {
-    private Node load(String name) throws IOException {
-        Loader loader = new Loader();
-        return loader.loadCcsStream(getClass().getResourceAsStream("/" + name), name);
+    private SearchContext load(String name) throws IOException {
+        return new CcsDomain().loadCcsStream(getClass().getResourceAsStream("/" + name), name).build();
     }
 
     @Test
     public void testBestBeforeClosest() throws Exception {
-        Node root = load("best-before-closest.ccs");
-        SearchContext c = new SearchContext(root, "first");
+        SearchContext c = load("best-before-closest.ccs");
+        c = new SearchContext(c, "first");
         c = new SearchContext(c, "second", "id");
         assertEquals("correct", c.getString("test"));
     }
 
     @Test
     public void testTiedSpecificities() throws Exception {
-        Node root = load("tied-specificities.ccs");
-        SearchContext c = new SearchContext(root, "first");
+        SearchContext c = load("tied-specificities.ccs");
+        c = new SearchContext(c, "first");
         c = new SearchContext(c, "second", null, "class1", "class2");
         assertEquals("correct", c.getString("test"));
     }
 
     @Test
     public void testComplexTie() throws Exception {
-        Node root = load("complex-tie.ccs");
-        SearchContext c = new SearchContext(root, "root");
+        SearchContext c = load("complex-tie.ccs");
         c = new SearchContext(c, "bar", null, "class1", "class2");
         assertEquals("correct", c.getString("test1"));
         c = new SearchContext(c, "foo");
@@ -42,20 +37,34 @@ public class NewRulesTest {
     }
 
     @Test
-    @Ignore("relies on 'important!'")
-    public void testOuterOverride() throws Exception {
-        Node root = load("outer-override.ccs");
-        SearchContext c = new SearchContext(root, "root");
-        c = new SearchContext(c, "env", "dev");
-        c = new SearchContext(c, "user", "me");
-        c = new SearchContext(c, "foo");
+    public void testConjSpecificities() throws Exception {
+        SearchContext c = load("conj-specificities.ccs");
+        c = new SearchContext(c, "a");
+        c = new SearchContext(c, "b", "b");
+        c = new SearchContext(c, "c", "c");
         assertEquals("correct", c.getString("test"));
     }
 
     @Test
+    public void testDisjSpecificities() throws Exception {
+        SearchContext c = load("disj-specificities.ccs");
+        c = new SearchContext(c, "a");
+        c = new SearchContext(c, "b");
+        assertEquals("correct1", c.getString("test"));
+        c = new SearchContext(c, "x", "c");
+        assertEquals("correct2", c.getString("test"));
+        c = new SearchContext(c, "y", "d");
+        assertEquals("correct1", c.getString("test"));
+
+        c = new SearchContext(c, "f", "f");
+        c = new SearchContext(c, "g");
+        c = new SearchContext(c, "h", "k");
+        assertEquals("correct3", c.getString("test"));
+    }
+
+    @Test
     public void testConjunction() throws Exception {
-        Node root = load("conjunction.ccs");
-        SearchContext c = new SearchContext(root, "root");
+        SearchContext c = load("conjunction.ccs");
         c = new SearchContext(c, "a");
         c = new SearchContext(c, "b");
         assertEquals("correct1", c.getString("test"));
@@ -68,8 +77,7 @@ public class NewRulesTest {
 
     @Test
     public void testDisjunction() throws Exception {
-        Node root = load("disjunction.ccs");
-        SearchContext c = new SearchContext(root, "root");
+        SearchContext c = load("disjunction.ccs");
         c = new SearchContext(c, "a");
         c = new SearchContext(c, "b");
         c = new SearchContext(c, "c");
@@ -82,8 +90,7 @@ public class NewRulesTest {
 
     @Test
     public void testContext() throws Exception {
-        Node root = load("context.ccs");
-        SearchContext c = new SearchContext(root, "root");
+        SearchContext c = load("context.ccs");
         c = new SearchContext(c, "b");
         c = new SearchContext(c, "a");
         assertEquals("correct1", c.getString("test"));
@@ -94,8 +101,7 @@ public class NewRulesTest {
 
     @Test
     public void testTrailingCombinator() throws Exception {
-        Node root = load("trailing-combinator.ccs");
-        SearchContext c = new SearchContext(root, "root");
+        SearchContext c = load("trailing-combinator.ccs");
         c = new SearchContext(c, "b");
         c = new SearchContext(c, "a");
         assertEquals("bottom", c.getString("test"));
@@ -103,9 +109,9 @@ public class NewRulesTest {
 
     @Test
     public void testDirectChild() throws Exception {
-        Node root = load("direct-child.ccs");
-        SearchContext c = new SearchContext(root, "root");
-        c = new SearchContext(c, "a");
+        SearchContext root = load("direct-child.ccs");
+        SearchContext
+                c = new SearchContext(root, "a");
         c = new SearchContext(c, "b");
         assertEquals("inner", c.getString("test"));
 
@@ -114,5 +120,14 @@ public class NewRulesTest {
         c = new SearchContext(c, "c");
         c = new SearchContext(c, "b");
         assertEquals("outer", c.getString("test"));
+    }
+
+    @Test
+    public void testLocalBeatsHeritable() throws Exception {
+        SearchContext c = load("local-beats-heritable.ccs");
+        c = new SearchContext(c, "a");
+        assertEquals("local", c.getString("test"));
+        c = new SearchContext(c, "b");
+        assertEquals("heritable", c.getString("test"));
     }
 }

@@ -3,11 +3,7 @@ package net.immute.ccs;
 import net.immute.ccs.dag.Key;
 import net.immute.ccs.dag.Node;
 
-import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static java.util.Collections.reverseOrder;
-import static java.util.Collections.singletonList;
 
 public class SearchContext {
     private final AtomicReference<SearchState> searchState = new AtomicReference<SearchState>();
@@ -15,16 +11,10 @@ public class SearchContext {
     private final SearchContext parent;
     private final Key key;
 
-    private SearchContext(Node root) {
-        searchState.set(new SearchState(root));
+    SearchContext(Node root, CcsLogger log) {
+        searchState.set(new SearchState(root, this, log));
         parent = null;
         key = null;
-    }
-
-    public SearchContext(Node root, String element) {
-        parent = new SearchContext(root);
-        key = new Key(element);
-        key.setRoot(true);
     }
 
     public SearchContext(SearchContext parent, String element) {
@@ -117,7 +107,7 @@ public class SearchContext {
 
     private SearchState getSearchState() {
         if (searchState.get() == null) {
-            SearchState tmp = new SearchState(parent.getSearchState());
+            SearchState tmp = parent.getSearchState().newChild(this);
 
             boolean includeDirectChildren = true;
             SearchContext p = parent;

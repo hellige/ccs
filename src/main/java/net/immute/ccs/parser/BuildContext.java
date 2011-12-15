@@ -2,7 +2,7 @@ package net.immute.ccs.parser;
 
 import net.immute.ccs.CcsProperty;
 import net.immute.ccs.Origin;
-import net.immute.ccs.dag.Dag;
+import net.immute.ccs.dag.DagBuilder;
 import net.immute.ccs.dag.Node;
 import net.immute.ccs.dag.Tally;
 
@@ -10,12 +10,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class BuildContext {
-    protected final Dag dag;
+    protected final DagBuilder dag;
 
     abstract public Node traverse(SelectorLeaf selector);
     abstract public Node getNode();
 
-    public BuildContext(Dag dag) {
+    public BuildContext(DagBuilder dag) {
         this.dag = dag;
     }
 
@@ -31,7 +31,7 @@ public abstract class BuildContext {
     public static class Descendant extends BuildContext {
         private final Node node;
 
-        public Descendant(Dag dag, Node node) {
+        public Descendant(DagBuilder dag, Node node) {
             super(dag);
             this.node = node;
         }
@@ -51,7 +51,7 @@ public abstract class BuildContext {
 
         abstract protected Tally newTally(Node firstNode, Node secondNode);
 
-        public TallyBuildContext(Dag dag, Node node, BuildContext baseContext) {
+        public TallyBuildContext(DagBuilder dag, Node node, BuildContext baseContext) {
             super(dag);
             this.firstNode = node;
             this.baseContext = baseContext;

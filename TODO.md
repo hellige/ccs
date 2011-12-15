@@ -1,9 +1,7 @@
-  - add important!: search upward important, then search upward normal
-  - settings based on filename?
   - interpolation
   - trace (sys prop to path?)
-  - pluggable logging
   - eager vs lazy search (pre-compute all props for given context)
   - dump all prop values with origin (in priority order)
   - functional test framework (file-driven)
-  - split building from using to clarify api...
+  - make error handling more consistent while loading files. always throw?
+  - replace recursive-search attributes with client-specified attributes, or a mix of both?

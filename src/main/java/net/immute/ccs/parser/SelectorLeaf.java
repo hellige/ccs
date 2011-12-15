@@ -6,84 +6,66 @@ import net.immute.ccs.dag.Node;
 import java.util.ArrayList;
 import java.util.List;
 
-public interface SelectorLeaf {
-    Node traverse(BuildContext context);
-    SelectorLeaf asDirectChild();
-    SelectorLeaf descendant(SelectorLeaf pop);
-    SelectorLeaf conjunction(SelectorLeaf pop);
-    SelectorLeaf disjunction(SelectorLeaf pop);
+public abstract class SelectorLeaf {
+    abstract Node traverse(BuildContext context);
+    abstract SelectorLeaf descendant(SelectorLeaf pop);
+    abstract SelectorLeaf conjunction(SelectorLeaf pop);
+    abstract SelectorLeaf disjunction(SelectorLeaf pop);
 
-    public static class Step implements SelectorLeaf {
-        private final Key key;
-
-        public Step(Key key) {
-            this.key = key;
-        }
-
-        @Override public Node traverse(BuildContext context) {
-            Node node = context.getNode();
-            Node tmpNode = node.getChild(key);
-            if (tmpNode == null) {
-                tmpNode = new Node();
-                node.addChild(key, tmpNode);
+    public static SelectorLeaf step(final Key key) {
+        return new SelectorLeaf() {
+            @Override public Node traverse(BuildContext context) {
+                Node node = context.getNode();
+                Node tmpNode = node.getChild(key);
+                if (tmpNode == null) {
+                    tmpNode = new Node();
+                    node.addChild(key, tmpNode);
+                }
+                return tmpNode;
             }
-            return tmpNode;
-        }
 
-        @Override public SelectorLeaf asDirectChild() {
-            // TODO sure would be nicer if Key was immutable, or at least easily copied...
-            key.setDirectChild(true);
-            return this;
-        }
+            @Override public SelectorLeaf descendant(SelectorLeaf right) {
+                return SelectorLeaf.wrap(SelectorBranch.descendant(this), right);
+            }
 
-        @Override public SelectorLeaf descendant(SelectorLeaf right) {
-            return new SelectorLeaf.Wrapped(new SelectorBranch.Descendant(this), right);
-        }
+            @Override public SelectorLeaf conjunction(SelectorLeaf right) {
+                return SelectorLeaf.wrap(SelectorBranch.conjunction(this), right);
+            }
 
-        @Override public SelectorLeaf conjunction(SelectorLeaf right) {
-            return new SelectorLeaf.Wrapped(new SelectorBranch.Conjunction(this), right);
-        }
-
-        @Override public SelectorLeaf disjunction(SelectorLeaf right) {
-            return new SelectorLeaf.Wrapped(new SelectorBranch.Disjunction(this), right);
-        }
+            @Override public SelectorLeaf disjunction(SelectorLeaf right) {
+                return SelectorLeaf.wrap(SelectorBranch.disjunction(this), right);
+            }
+        };
     }
 
-    public static class Wrapped implements SelectorLeaf {
-        private final List<SelectorBranch> branches = new ArrayList<SelectorBranch>();
-        private SelectorLeaf right;
+    public static SelectorLeaf wrap(final SelectorBranch selector, final SelectorLeaf leaf) {
+        return new SelectorLeaf() {
+            private final List<SelectorBranch> branches = new ArrayList<SelectorBranch>() {{ add(selector); }};
+            private SelectorLeaf right = leaf;
 
-        public Wrapped(SelectorBranch selector, SelectorLeaf right) {
-            branches.add(selector);
-            this.right = right;
-        }
+            @Override public Node traverse(BuildContext context) {
+                BuildContext tmp = context;
+                for (SelectorBranch branch : branches) tmp = branch.traverse(tmp, context);
+                return tmp.traverse(right);
+            }
 
-        @Override public Node traverse(BuildContext context) {
-            BuildContext tmp = context;
-            for (SelectorBranch branch : branches) tmp = branch.traverse(tmp, context);
-            return tmp.traverse(right);
-        }
+            private SelectorLeaf push(SelectorBranch newBranch, SelectorLeaf newRight) {
+                branches.add(newBranch);
+                this.right = newRight;
+                return this;
+            }
 
-        @Override public SelectorLeaf asDirectChild() {
-            return new Wrapped(branches.get(0).asDirectChild(), right);
-        }
+            @Override public SelectorLeaf descendant(SelectorLeaf right) {
+                return push(SelectorBranch.descendant(this.right), right);
+            }
 
-        @Override public SelectorLeaf descendant(SelectorLeaf right) {
-            branches.add(new SelectorBranch.Descendant(this.right));
-            this.right = right;
-            return this;
-        }
+            @Override public SelectorLeaf conjunction(SelectorLeaf right) {
+                return push(SelectorBranch.conjunction(this.right), right);
+            }
 
-        @Override public SelectorLeaf conjunction(SelectorLeaf right) {
-            branches.add(new SelectorBranch.Conjunction(this.right));
-            this.right = right;
-            return this;
-        }
-
-        @Override public SelectorLeaf disjunction(SelectorLeaf right) {
-            branches.add(new SelectorBranch.Disjunction(this.right));
-            this.right = right;
-            return this;
-        }
+            @Override public SelectorLeaf disjunction(SelectorLeaf right) {
+                return push(SelectorBranch.disjunction(this.right), right);
+            }
+        };
     }
 }

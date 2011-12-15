@@ -2,8 +2,7 @@ package net.immute.ccs.dag;
 
 import net.immute.ccs.parser.BuildContext;
 
-// TODO if this is really kept isolated to within Loader, etc., maybe rename to DagBuilder or something...
-public class Dag {
+public class DagBuilder {
     private final Node root = new Node();
     private final BuildContext buildContext = new BuildContext.Descendant(this, root);
 

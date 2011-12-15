@@ -19,48 +19,41 @@ public abstract class Tally {
         return node;
     }
 
-    // TODO move...
     public static class TallyState {
         private final AndTally tally;
-        private final boolean[] matched;
-        private final Specificity[] specs;
+        private final Specificity[] matches;
         private final boolean fullyMatched;
 
         public TallyState(AndTally tally) {
             this.tally = tally;
-            this.matched = new boolean[tally.getSize()];
-            this.specs = new Specificity[tally.getSize()];
+            this.matches = new Specificity[tally.getSize()];
             this.fullyMatched = false;
         }
 
-        public TallyState(AndTally tally, boolean[] newMatched, Specificity[] newSpecs, boolean fullyMatched) {
+        public TallyState(AndTally tally, Specificity[] newSpecs, boolean fullyMatched) {
             this.tally = tally;
-            this.matched = newMatched;
-            this.specs = newSpecs;
+            this.matches = newSpecs;
             this.fullyMatched = fullyMatched;
         }
 
         private TallyState activate(Node leg, Specificity spec) {
             boolean fullyMatched = true;
-            boolean[] newMatched = new boolean[tally.getSize()];
-            Specificity[] newSpecs = new Specificity[tally.getSize()];
+            Specificity[] newMatches = new Specificity[tally.getSize()];
 
             for (int i = 0; i < tally.getSize(); i++) {
                 if (tally.getLeg(i) == leg) { // NB reference equality...
-                    newMatched[i] = true;
-                    newSpecs[i] = spec; // TODO take the max!!!
+                    newMatches[i] = matches[i] == null || matches[i].compareTo(spec) < 0 ? spec : matches[i];
                 } else {
-                    newMatched[i] = matched[i];
-                    newSpecs[i] = specs[i];
-                    if (!matched[i]) fullyMatched = false;
+                    newMatches[i] = matches[i];
+                    if (matches[i] == null) fullyMatched = false;
                 }
             }
-            return new TallyState(tally, newMatched, newSpecs, fullyMatched);
+            return new TallyState(tally, newMatches, fullyMatched);
         }
 
         private Specificity getSpecificity() {
             Specificity result = new Specificity();
-            for (Specificity spec : specs) result = result.add(spec);
+            for (Specificity spec : matches) result = result.add(spec);
             return result;
         }
     }
@@ -95,7 +88,7 @@ public abstract class Tally {
         public void activate(Node _, Specificity spec, SearchState searchState) {
             // no state for or-joins, just re-activate node with the current specificity
             // TODO this may allow spurious warnings, if multiple legs of the disjunction match with same specificity.
-            // to detect this would require results to avoid duplicates and just take the max specificity, i suppose...
+            // to detect this would require searchState to avoid duplicates and just take the max specificity, i suppose...
             node.activate(spec, searchState);
         }
     }

@@ -1,7 +1,5 @@
 package net.immute.ccs;
 
-import net.immute.ccs.dag.Node;
-import net.immute.ccs.parser.Loader;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -9,8 +7,9 @@ import static org.junit.Assert.assertEquals;
 public class FunctionalTest {
     @Test
     public void testCcs() throws Exception {
-        Loader loader = new Loader();
-        Node root = loader.loadCcsStream(getClass().getResourceAsStream("/test.ccs"), "test.ccs");
+        SearchContext root = new CcsDomain()
+                .loadCcsStream(getClass().getResourceAsStream("/test.ccs"), "test.ccs")
+                .build();
 
         SearchContext c = new SearchContext(root, "hi");
         c = new SearchContext(c, "body");

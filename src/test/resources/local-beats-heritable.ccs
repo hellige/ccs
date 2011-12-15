@@ -1,0 +1,4 @@
+a {
+  local test = 'local';
+  test = 'heritable';
+}

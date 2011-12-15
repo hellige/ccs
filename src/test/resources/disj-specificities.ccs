@@ -1,0 +1,6 @@
+a b, a b #d { test = 'correct1' }
+#c { test = 'correct2' }
+
+
+#f h, g h { test = 'correct3' }
+#k { test = 'incorrect' }

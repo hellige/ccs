@@ -16,12 +16,10 @@ public class Key {
     private Specificity specificity;
     private String element;
     private String id;
-    private boolean root;
     private boolean directChild;
 
     public Key(String element, String... classes) {
         this.element = element;
-        root = false;
         directChild = false;
         specificity = new Specificity();
         if (element != null) {
@@ -54,11 +52,6 @@ public class Key {
         this.directChild = directChild;
     }
 
-    public void setRoot(boolean root) {
-        this.root = root;
-        specificity = specificity.incClassSelectors();
-    }
-
     public void setAttribute(String key, String value) {
         attributes.put(key, value);
         specificity = specificity.incClassSelectors();
@@ -84,10 +77,6 @@ public class Key {
     public boolean matches(Key k, SearchContext sc,
         boolean includeDirectChildren) {
         if (directChild && !includeDirectChildren) {
-            return false;
-        }
-
-        if (root && !k.root) {
             return false;
         }
 
@@ -126,7 +115,6 @@ public class Key {
             result.append(element);
         else
             result.append("*");
-        if (root) result.append(":root");
         if (id != null) result.append("#").append(id);
         for (String c : classes) result.append(".").append(c);
         for (String a : attributes.keySet()) result.append("[").append(a).append("=").append(attributes.get(a))
@@ -142,7 +130,6 @@ public class Key {
         Key key = (Key) o;
 
         if (directChild != key.directChild) return false;
-        if (root != key.root) return false;
         if (attributes != null ? !attributes.equals(key.attributes) : key.attributes != null) return false;
         if (classes != null ? !classes.equals(key.classes) : key.classes != null) return false;
         if (element != null ? !element.equals(key.element) : key.element != null) return false;
@@ -157,7 +144,6 @@ public class Key {
         result = 31 * result + (attributes != null ? attributes.hashCode() : 0);
         result = 31 * result + (classes != null ? classes.hashCode() : 0);
         result = 31 * result + (id != null ? id.hashCode() : 0);
-        result = 31 * result + (root ? 1 : 0);
         result = 31 * result + (directChild ? 1 : 0);
         return result;
     }
