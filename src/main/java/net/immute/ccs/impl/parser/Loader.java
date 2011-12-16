@@ -15,7 +15,7 @@ import org.parboiled.buffers.DefaultInputBuffer;
 import org.parboiled.buffers.InputBuffer;
 import org.parboiled.common.FileUtils;
 import org.parboiled.errors.ErrorUtils;
-import org.parboiled.parserunners.RecoveringParseRunner;
+import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
 import org.parboiled.support.Var;
 
@@ -64,7 +64,7 @@ public class Loader {
         FileUtils.copyAll(input, tmp);
         InputBuffer buffer = new DefaultInputBuffer(tmp.toCharArray());
         RulesetParser parser = Parboiled.createParser(RulesetParser.class, fileName);
-        return new RecoveringParseRunner<AstRule>(parser.ruleset()).run(buffer);
+        return new ReportingParseRunner<AstRule>(parser.ruleset()).run(buffer);
     }
 
     static class CcsBaseParser<T> extends BaseParser<T> {
