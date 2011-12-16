@@ -1,9 +1,10 @@
-package net.immute.ccs.parser;
+package net.immute.ccs.impl.parser;
 
 import net.immute.ccs.CcsLogger;
+import net.immute.ccs.ImportResolver;
 import net.immute.ccs.Origin;
-import net.immute.ccs.dag.DagBuilder;
-import net.immute.ccs.dag.Key;
+import net.immute.ccs.impl.dag.DagBuilder;
+import net.immute.ccs.impl.dag.Key;
 import org.parboiled.BaseParser;
 import org.parboiled.Parboiled;
 import org.parboiled.Rule;

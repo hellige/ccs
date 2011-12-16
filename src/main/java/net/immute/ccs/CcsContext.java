@@ -1,38 +1,51 @@
 package net.immute.ccs;
 
-import net.immute.ccs.dag.Key;
-import net.immute.ccs.dag.Node;
+import net.immute.ccs.impl.SearchState;
+import net.immute.ccs.impl.dag.Key;
+import net.immute.ccs.impl.dag.Node;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public class SearchContext {
+public class CcsContext {
     private final AtomicReference<SearchState> searchState = new AtomicReference<SearchState>();
 
-    private final SearchContext parent;
+    private final CcsContext parent;
     private final Key key;
 
-    SearchContext(Node root, CcsLogger log) {
+    CcsContext(Node root, CcsLogger log) {
         searchState.set(new SearchState(root, this, log));
         parent = null;
         key = null;
     }
 
-    public SearchContext(SearchContext parent, String element) {
+    private CcsContext(CcsContext parent, String element) {
         this.parent = parent;
         key = new Key(element);
     }
 
-    public SearchContext(SearchContext parent, String element, String id) {
+    private CcsContext(CcsContext parent, String element, String id) {
         this.parent = parent;
         key = new Key(element);
         key.setId(id);
     }
 
-    public SearchContext(SearchContext parent, String element, String id,
-        String... classes) {
+    private CcsContext(CcsContext parent, String element, String id,
+                       String... classes) {
         this.parent = parent;
         key = new Key(element, classes);
         key.setId(id);
+    }
+
+    public CcsContext constrain(String element) {
+        return new CcsContext(this, element);
+    }
+
+    public CcsContext constrain(String element, String id) {
+        return new CcsContext(this, element, id);
+    }
+
+    public CcsContext constrain(String element, String id, String... classes) {
+        return new CcsContext(this, element, id, classes);
     }
 
     public String getKey() {
@@ -110,7 +123,7 @@ public class SearchContext {
             SearchState tmp = parent.getSearchState().newChild(this);
 
             boolean includeDirectChildren = true;
-            SearchContext p = parent;
+            CcsContext p = parent;
             while (p != null) {
                 // TODO be nice to replace parent with 'this', but it's really not clear that that's even possible...
                 p.getSearchState().extend(key, parent, includeDirectChildren, tmp);

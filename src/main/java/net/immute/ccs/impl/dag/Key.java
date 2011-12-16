@@ -1,8 +1,7 @@
-package net.immute.ccs.dag;
+package net.immute.ccs.impl.dag;
 
 import net.immute.ccs.NoSuchPropertyException;
-import net.immute.ccs.SearchContext;
-import net.immute.ccs.Specificity;
+import net.immute.ccs.CcsContext;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,7 +73,7 @@ public class Key {
      *  key succeed or fail?
      * @return true if this object, as a pattern, matches the given key.
      */
-    public boolean matches(Key k, SearchContext sc,
+    public boolean matches(Key k, CcsContext sc,
         boolean includeDirectChildren) {
         if (directChild && !includeDirectChildren) {
             return false;

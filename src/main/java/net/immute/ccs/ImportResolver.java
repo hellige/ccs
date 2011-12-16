@@ -1,4 +1,4 @@
-package net.immute.ccs.parser;
+package net.immute.ccs;
 
 import java.io.InputStream;
 

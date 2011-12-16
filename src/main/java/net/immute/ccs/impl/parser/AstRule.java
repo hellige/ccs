@@ -1,5 +1,6 @@
-package net.immute.ccs.parser;
+package net.immute.ccs.impl.parser;
 
+import net.immute.ccs.ImportResolver;
 import net.immute.ccs.Origin;
 
 import java.io.IOException;

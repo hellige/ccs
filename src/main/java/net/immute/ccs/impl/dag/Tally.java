@@ -1,7 +1,6 @@
-package net.immute.ccs.dag;
+package net.immute.ccs.impl.dag;
 
-import net.immute.ccs.SearchState;
-import net.immute.ccs.Specificity;
+import net.immute.ccs.impl.SearchState;
 
 // note: all comparisons of tallies should be by reference. don't implement equals/hashcode!
 public abstract class Tally {
@@ -67,6 +66,7 @@ public abstract class Tally {
         public void activate(Node leg, Specificity spec, SearchState searchState) {
             TallyState state = searchState.getTallyState(this).activate(leg, spec);
             searchState.setTallyState(this, state);
+            // seems like this could lead to spurious warnings, but see comment below...
             if (state.fullyMatched) node.activate(state.getSpecificity(), searchState);
         }
 
@@ -87,8 +87,9 @@ public abstract class Tally {
         @Override
         public void activate(Node _, Specificity spec, SearchState searchState) {
             // no state for or-joins, just re-activate node with the current specificity
-            // TODO this may allow spurious warnings, if multiple legs of the disjunction match with same specificity.
-            // to detect this would require searchState to avoid duplicates and just take the max specificity, i suppose...
+            // it seems that this may allow spurious warnings, if multiple legs of the disjunction match with
+            // same specificity. but this is detected in SearchState, where we keep a *set* of nodes for
+            // each specificity, rather than, for example, a *list*.
             node.activate(spec, searchState);
         }
     }

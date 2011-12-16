@@ -2,19 +2,19 @@ package net.immute.ccs;
 
 public class NoSuchPropertyException extends RuntimeException {
     private final String propertyName;
-    private final SearchContext searchContext;
+    private final CcsContext ccsContext;
 
-    public NoSuchPropertyException(String propertyName, SearchContext searchContext) {
-        super(String.format("Property '%s' (search path: %s)", propertyName, searchContext));
+    public NoSuchPropertyException(String propertyName, CcsContext ccsContext) {
+        super(String.format("Property '%s' (search path: %s)", propertyName, ccsContext));
         this.propertyName = propertyName;
-        this.searchContext = searchContext;
+        this.ccsContext = ccsContext;
     }
 
     public String getPropertyName() {
         return propertyName;
     }
 
-    public SearchContext getSearchContext() {
-        return searchContext;
+    public CcsContext getCcsContext() {
+        return ccsContext;
     }
 }

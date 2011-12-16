@@ -1,4 +1,4 @@
-package net.immute.ccs.parser;
+package net.immute.ccs.impl.parser;
 
 public abstract class SelectorBranch {
     public abstract BuildContext traverse(BuildContext context, BuildContext baseContext);

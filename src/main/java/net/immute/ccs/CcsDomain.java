@@ -1,8 +1,7 @@
 package net.immute.ccs;
 
-import net.immute.ccs.dag.DagBuilder;
-import net.immute.ccs.parser.ImportResolver;
-import net.immute.ccs.parser.Loader;
+import net.immute.ccs.impl.dag.DagBuilder;
+import net.immute.ccs.impl.parser.Loader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,8 +22,8 @@ public class CcsDomain {
         this(new CcsLogger.StderrCcsLogger());
     }
 
-    public SearchContext build() {
-        return new SearchContext(dag.getRoot(), log);
+    public CcsContext build() {
+        return new CcsContext(dag.getRoot(), log);
     }
 
     public CcsDomain loadCcsFile(String fileName) throws IOException {

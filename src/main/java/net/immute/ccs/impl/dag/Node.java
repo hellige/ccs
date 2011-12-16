@@ -1,9 +1,8 @@
-package net.immute.ccs.dag;
+package net.immute.ccs.impl.dag;
 
 import net.immute.ccs.CcsProperty;
-import net.immute.ccs.SearchContext;
-import net.immute.ccs.SearchState;
-import net.immute.ccs.Specificity;
+import net.immute.ccs.CcsContext;
+import net.immute.ccs.impl.SearchState;
 
 import java.util.*;
 
@@ -31,7 +30,7 @@ public class Node {
         children.put(key, child);
     }
 
-    public void getChildren(Key key, Specificity spec, SearchContext sc,
+    public void getChildren(Key key, Specificity spec, CcsContext sc,
                             boolean includeDirectChildren, SearchState searchState) {
         for (Map.Entry<Key, Node> entry : children.entrySet())
             if (entry.getKey().matches(key, sc, includeDirectChildren))

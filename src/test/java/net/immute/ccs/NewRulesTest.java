@@ -7,38 +7,38 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 
 public class NewRulesTest {
-    private SearchContext load(String name) throws IOException {
+    private CcsContext load(String name) throws IOException {
         return new CcsDomain().loadCcsStream(getClass().getResourceAsStream("/" + name), name).build();
     }
 
     @Test
     public void oldFunctionalTest() throws Exception {
-        SearchContext root = load("test.ccs");
+        CcsContext root = load("test.ccs");
 
-        SearchContext c = new SearchContext(root, "hi");
-        c = new SearchContext(c, "body");
-        c = new SearchContext(c, "bar");
-        c = new SearchContext(c, "em");
-        SearchContext c2 = new SearchContext(c, "baz");
+        CcsContext c = root.constrain("hi");
+        c = c.constrain("body");
+        c = c.constrain("bar");
+        c = c.constrain("em");
+        CcsContext c2 = c.constrain("baz");
         assertEquals("hi", c.getString("foo"));
         assertEquals("there", c2.getString("foo"));
         assertEquals("hi", c.getString("foo"));
-        SearchContext c3 = new SearchContext(c, "blah");
+        CcsContext c3 = c.constrain("blah");
         assertEquals("hi", c3.getString("foo"));
-        SearchContext c4 = new SearchContext(c2, "em");
+        CcsContext c4 = c2.constrain("em");
         assertEquals("!", c4.getString("foo"));
 
-        c = new SearchContext(root, "hi");
-        c = new SearchContext(c, "body", "doit");
-        c = new SearchContext(c, "bar");
-        c = new SearchContext(c, "em", null, "foo");
-        c2 = new SearchContext(c, "baz");
+        c = root.constrain("hi");
+        c = c.constrain("body", "doit");
+        c = c.constrain("bar");
+        c = c.constrain("em", null, "foo");
+        c2 = c.constrain("baz");
         assertEquals("hi", c.getString("foo"));
         assertEquals("there", c2.getString("foo"));
         assertEquals("hi", c.getString("foo"));
-        c3 = new SearchContext(c, "blah");
+        c3 = c.constrain("blah");
         assertEquals("hi", c3.getString("foo"));
-        c4 = new SearchContext(c2, "em");
+        c4 = c2.constrain("em");
         assertEquals("ARGH", c4.getString("foo"));
         assertEquals("WTF", c4.getString("rootTest"));
         assertEquals("c", c4.getString("childTest"));
@@ -47,143 +47,142 @@ public class NewRulesTest {
 
     @Test
     public void testBestBeforeClosest() throws Exception {
-        SearchContext c = load("best-before-closest.ccs");
-        c = new SearchContext(c, "first");
-        c = new SearchContext(c, "second", "id");
+        CcsContext c = load("best-before-closest.ccs");
+        c = c.constrain("first");
+        c = c.constrain("second", "id");
         assertEquals("correct", c.getString("test"));
     }
 
     @Test
     public void testTiedSpecificities() throws Exception {
-        SearchContext c = load("tied-specificities.ccs");
-        c = new SearchContext(c, "first");
-        c = new SearchContext(c, "second", null, "class1", "class2");
+        CcsContext c = load("tied-specificities.ccs");
+        c = c.constrain("first");
+        c = c.constrain("second", null, "class1", "class2");
         assertEquals("correct", c.getString("test"));
     }
 
     @Test
     public void testComplexTie() throws Exception {
-        SearchContext c = load("complex-tie.ccs");
-        c = new SearchContext(c, "bar", null, "class1", "class2");
+        CcsContext c = load("complex-tie.ccs");
+        c = c.constrain("bar", null, "class1", "class2");
         assertEquals("correct", c.getString("test1"));
-        c = new SearchContext(c, "foo");
+        c = c.constrain("foo");
         assertEquals("correct", c.getString("test2"));
     }
 
     @Test
     public void testConjSpecificities() throws Exception {
-        SearchContext c = load("conj-specificities.ccs");
-        c = new SearchContext(c, "a");
-        c = new SearchContext(c, "b", "b");
-        c = new SearchContext(c, "c", "c");
+        CcsContext c = load("conj-specificities.ccs");
+        c = c.constrain("a");
+        c = c.constrain("b", "b");
+        c = c.constrain("c", "c");
         assertEquals("correct", c.getString("test"));
     }
 
     @Test
     public void testDisjSpecificities() throws Exception {
-        SearchContext c = load("disj-specificities.ccs");
-        c = new SearchContext(c, "a");
-        c = new SearchContext(c, "b");
+        CcsContext c = load("disj-specificities.ccs");
+        c = c.constrain("a");
+        c = c.constrain("b");
         assertEquals("correct1", c.getString("test"));
-        c = new SearchContext(c, "x", "c");
+        c = c.constrain("x", "c");
         assertEquals("correct2", c.getString("test"));
-        c = new SearchContext(c, "y", "d");
+        c = c.constrain("y", "d");
         assertEquals("correct1", c.getString("test"));
 
-        c = new SearchContext(c, "f", "f");
-        c = new SearchContext(c, "g");
-        c = new SearchContext(c, "h", "k");
+        c = c.constrain("f", "f");
+        c = c.constrain("g");
+        c = c.constrain("h", "k");
         assertEquals("correct3", c.getString("test"));
     }
 
     @Test
     public void testConjunction() throws Exception {
-        SearchContext c = load("conjunction.ccs");
-        c = new SearchContext(c, "a");
-        c = new SearchContext(c, "b");
+        CcsContext c = load("conjunction.ccs");
+        c = c.constrain("a");
+        c = c.constrain("b");
         assertEquals("correct1", c.getString("test"));
-        SearchContext c2 = new SearchContext(c, "c", null, "class1");
+        CcsContext c2 = c.constrain("c", null, "class1");
         assertEquals("correct2", c2.getString("test"));
 
-        c2 = new SearchContext(c, "d");
+        c2 = c.constrain("d");
         assertEquals("correct3", c2.getString("test"));
     }
 
     @Test
     public void testDisjunction() throws Exception {
-        SearchContext c = load("disjunction.ccs");
-        c = new SearchContext(c, "a");
-        c = new SearchContext(c, "b");
-        c = new SearchContext(c, "c");
+        CcsContext c = load("disjunction.ccs");
+        c = c.constrain("a");
+        c = c.constrain("b");
+        c = c.constrain("c");
         assertEquals("correct1", c.getString("test"));
-        c = new SearchContext(c, "c");
+        c = c.constrain("c");
         assertEquals("correct2", c.getString("test"));
-        c = new SearchContext(c, "c", null, "b");
+        c = c.constrain("c", null, "b");
         assertEquals("correct1", c.getString("test"));
     }
 
     @Test
     public void testContext() throws Exception {
-        SearchContext c = load("context.ccs");
-        c = new SearchContext(c, "b");
-        c = new SearchContext(c, "a");
+        CcsContext c = load("context.ccs");
+        c = c.constrain("b");
+        c = c.constrain("a");
         assertEquals("correct1", c.getString("test"));
-        c = new SearchContext(c, "b");
-        c = new SearchContext(c, "a");
+        c = c.constrain("b");
+        c = c.constrain("a");
         assertEquals("correct2", c.getString("test"));
     }
 
     @Test
     public void testTrailingCombinator() throws Exception {
-        SearchContext c = load("trailing-combinator.ccs");
-        c = new SearchContext(c, "b");
-        c = new SearchContext(c, "a");
+        CcsContext c = load("trailing-combinator.ccs");
+        c = c.constrain("b");
+        c = c.constrain("a");
         assertEquals("bottom", c.getString("test"));
 
-        SearchContext c2 = new SearchContext(c, "e");
-        c2 = new SearchContext(c2, "c");
-        c2 = new SearchContext(c2, "b");
-        c2 = new SearchContext(c2, "d");
+        CcsContext c2 = c.constrain("e");
+        c2 = c2.constrain("c");
+        c2 = c2.constrain("b");
+        c2 = c2.constrain("d");
         assertEquals("bottom", c2.getString("test2"));
     }
 
     @Test
     public void testDirectChild() throws Exception {
-        SearchContext root = load("direct-child.ccs");
-        SearchContext
-                c = new SearchContext(root, "a");
-        c = new SearchContext(c, "b");
+        CcsContext root = load("direct-child.ccs");
+        CcsContext c = root.constrain("a");
+        c = c.constrain("b");
         assertEquals("inner", c.getString("test"));
 
-        c = new SearchContext(root, "root");
-        c = new SearchContext(c, "a");
-        c = new SearchContext(c, "c");
-        c = new SearchContext(c, "b");
+        c = root.constrain("root");
+        c = c.constrain("a");
+        c = c.constrain("c");
+        c = c.constrain("b");
         assertEquals("outer", c.getString("test"));
     }
 
     @Test
     public void testLocalBeatsHeritable() throws Exception {
-        SearchContext c = load("local-beats-heritable.ccs");
-        c = new SearchContext(c, "a");
+        CcsContext c = load("local-beats-heritable.ccs");
+        c = c.constrain("a");
         assertEquals("local", c.getString("test"));
-        c = new SearchContext(c, "b");
+        c = c.constrain("b");
         assertEquals("heritable", c.getString("test"));
     }
 
     @Test
     public void testOrderDependentDisj() throws Exception {
-        SearchContext root = load("order-dependent-disj.ccs");
-        SearchContext c = new SearchContext(root, "b");
+        CcsContext root = load("order-dependent-disj.ccs");
+        CcsContext c = root.constrain("b");
         assertEquals(2, c.getInt("x"));
 
-        c = new SearchContext(root, "a");
-        c = new SearchContext(c, "c");
-        c = new SearchContext(c, "d");
+        c = root.constrain("a");
+        c = c.constrain("c");
+        c = c.constrain("d");
         assertEquals(1, c.getInt("x"));
 
-        c = new SearchContext(root, "d");
-        c = new SearchContext(c, "f");
+        c = root.constrain("d");
+        c = c.constrain("f");
         assertEquals(2, c.getInt("y"));
     }
 }

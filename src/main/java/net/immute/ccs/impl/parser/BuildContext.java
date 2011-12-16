@@ -1,10 +1,10 @@
-package net.immute.ccs.parser;
+package net.immute.ccs.impl.parser;
 
 import net.immute.ccs.CcsProperty;
 import net.immute.ccs.Origin;
-import net.immute.ccs.dag.DagBuilder;
-import net.immute.ccs.dag.Node;
-import net.immute.ccs.dag.Tally;
+import net.immute.ccs.impl.dag.DagBuilder;
+import net.immute.ccs.impl.dag.Node;
+import net.immute.ccs.impl.dag.Tally;
 
 import java.util.HashSet;
 import java.util.Set;

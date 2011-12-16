@@ -1,4 +1,4 @@
-package net.immute.ccs;
+package net.immute.ccs.impl.dag;
 
 public class Specificity implements Comparable<Specificity> {
     private final int idSelectors;

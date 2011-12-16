@@ -1,7 +1,7 @@
-package net.immute.ccs.parser;
+package net.immute.ccs.impl.parser;
 
-import net.immute.ccs.dag.Key;
-import net.immute.ccs.dag.Node;
+import net.immute.ccs.impl.dag.Key;
+import net.immute.ccs.impl.dag.Node;
 
 import java.util.ArrayList;
 import java.util.List;

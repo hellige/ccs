@@ -1,6 +1,6 @@
-package net.immute.ccs.dag;
+package net.immute.ccs.impl.dag;
 
-import net.immute.ccs.parser.BuildContext;
+import net.immute.ccs.impl.parser.BuildContext;
 
 public class DagBuilder {
     private final Node root = new Node();

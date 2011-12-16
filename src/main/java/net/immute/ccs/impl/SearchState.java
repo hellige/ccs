@@ -1,20 +1,24 @@
-package net.immute.ccs;
+package net.immute.ccs.impl;
 
-import net.immute.ccs.dag.Key;
-import net.immute.ccs.dag.Node;
-import net.immute.ccs.dag.Tally;
+import net.immute.ccs.CcsContext;
+import net.immute.ccs.CcsLogger;
+import net.immute.ccs.CcsProperty;
+import net.immute.ccs.impl.dag.Specificity;
+import net.immute.ccs.impl.dag.Key;
+import net.immute.ccs.impl.dag.Node;
+import net.immute.ccs.impl.dag.Tally;
 
 import java.util.*;
 
 import static java.util.Collections.reverseOrder;
-import static java.util.Collections.singletonList;
+import static java.util.Collections.singleton;
 
 public class SearchState {
-    private final SortedMap<Specificity, List<Node>> nodes = new TreeMap<Specificity, List<Node>>(reverseOrder());
+    private final SortedMap<Specificity, Set<Node>> nodes = new TreeMap<Specificity, Set<Node>>(reverseOrder());
 
     private final TallyMap tallyMap;
     private final CcsLogger log;
-    private final SearchContext searchContext;
+    private final CcsContext ccsContext;
 
     private static final Comparator<CcsProperty> PROP_COMPARATOR =
             new Comparator<CcsProperty>() {
@@ -23,25 +27,25 @@ public class SearchState {
                 }
             };
 
-    public SearchState(Node root, SearchContext searchContext, CcsLogger log) {
-        nodes.put(new Specificity(), singletonList(root));
+    public SearchState(Node root, CcsContext ccsContext, CcsLogger log) {
+        nodes.put(new Specificity(), singleton(root));
         tallyMap = new TallyMap();
-        this.searchContext = searchContext;
+        this.ccsContext = ccsContext;
         this.log = log;
     }
 
-    private SearchState(TallyMap tallyMap, SearchContext searchContext, CcsLogger log) {
+    private SearchState(TallyMap tallyMap, CcsContext ccsContext, CcsLogger log) {
         this.tallyMap = tallyMap;
-        this.searchContext = searchContext;
+        this.ccsContext = ccsContext;
         this.log = log;
     }
 
-    public SearchState newChild(SearchContext searchContext) {
-        return new SearchState(new TallyMap(tallyMap), searchContext, log);
+    public SearchState newChild(CcsContext ccsContext) {
+        return new SearchState(new TallyMap(tallyMap), ccsContext, log);
     }
 
-    public void extend(Key key, SearchContext context, boolean includeDirectChildren, SearchState nextState) {
-        for (Map.Entry<Specificity, List<Node>> entry : nodes.entrySet())
+    public void extend(Key key, CcsContext context, boolean includeDirectChildren, SearchState nextState) {
+        for (Map.Entry<Specificity, Set<Node>> entry : nodes.entrySet())
             for (Node n : entry.getValue())
                 n.getChildren(key, entry.getKey(), context, includeDirectChildren, nextState);
     }
@@ -58,7 +62,7 @@ public class SearchState {
     }
 
     public CcsProperty findProperty(String propertyName, boolean locals) {
-        for (List<Node> ns : nodes.values()) {
+        for (Set<Node> ns : nodes.values()) {
             List<CcsProperty> values = new ArrayList<CcsProperty>();
             for (Node n : ns)
                 values.addAll(n.getProperty(propertyName, locals));
@@ -67,7 +71,7 @@ public class SearchState {
             else if (values.size() > 1) {
                 Collections.sort(values, PROP_COMPARATOR);
                 log.warn("Conflict detected for property: " + propertyName
-                        + " in context [" + searchContext.toString() + "]. "
+                        + " in context [" + ccsContext.toString() + "]. "
                         + "Conflicting settings at: [" + origins(values) + "]. "
                         + "Using most recent value.");
                 return values.get(values.size()-1);
@@ -76,10 +80,10 @@ public class SearchState {
         return null;
     }
 
-    private List<Node> getBucket(Specificity spec) {
-        List<Node> bucket = nodes.get(spec);
+    private Set<Node> getBucket(Specificity spec) {
+        Set<Node> bucket = nodes.get(spec);
         if (bucket == null) {
-            bucket = new ArrayList<Node>();
+            bucket = new HashSet<Node>();
             nodes.put(spec, bucket);
         }
         return bucket;
