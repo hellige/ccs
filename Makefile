@@ -4,7 +4,7 @@ TEST_SRCS := $(shell find src/test/java -name '*.java')
 TEST_CLASSES := $(shell find src/test/java -name '*Test.java' \
                     | sed -e 's:src/test/java/::' -e 's/.java$$//' -e 's:/:.:g')
 
-dist: dist/ccs.jar
+dist: dist/ccs.jar dist/ccs-src.jar
 
 compile:
 	rm -rf classes/main
@@ -27,6 +27,10 @@ dist/ccs.jar: compile test
 	jar cf classes/tmp.jar -C classes/tmp .
 	java -jar lib/jarjar-1.1.jar process jarjar.spec classes/tmp.jar $@
 	rm classes/tmp.jar
+
+dist/ccs-src.jar: dist/ccs.jar
+	rm -f $@
+	jar cf $@ -C src/main/java .
 
 clean:
 	rm -rf out
