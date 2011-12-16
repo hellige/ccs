@@ -246,8 +246,9 @@ public class Loader {
 
         Rule nested() {
             Var<SelectorBranch> selector = new Var<SelectorBranch>();
-            return Sequence(selector(selector), sp(), '{', sp(),
-                    push(new AstRule.Nested(selector.get())), ZeroOrMore(rule()), '}',
+            return Sequence(selector(selector), sp(), push(new AstRule.Nested(selector.get())), FirstOf(
+                    Sequence(':', sp(), FirstOf(imprt(), property())),
+                    Sequence('{', sp(), ZeroOrMore(rule()), '}')),
                     peek(1).append(pop()));
         }
 

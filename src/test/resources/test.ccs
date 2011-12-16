@@ -2,8 +2,8 @@
 
 body#doit { type = "hi"; foo = "bar" }
 
-body em { foo = "hi" }
-baz { foo = "there" }
+body em: foo = "hi"
+baz: foo = "there"
 baz em { foo = "!" }
 
 *[type="hi"][foo="bar"] baz em { foo = "ARGH" }

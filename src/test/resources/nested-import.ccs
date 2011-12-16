@@ -1,4 +1,2 @@
-first {
-  @import "imported.ccs";
-  test = 'outer';
-}
+first: @import "imported.ccs";
+first: test = 'outer';

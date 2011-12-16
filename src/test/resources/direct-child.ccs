@@ -1,2 +1,2 @@
 test = 'outer'
-a > b { test = 'inner' }
+a > b : test = 'inner'
