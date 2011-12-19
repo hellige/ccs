@@ -61,11 +61,13 @@ public class SearchState {
         return b.toString();
     }
 
-    public CcsProperty findProperty(String propertyName, boolean locals) {
+    public CcsProperty findProperty(String propertyName, boolean locals, boolean override) {
         for (Set<Node> ns : nodes.values()) {
             List<CcsProperty> values = new ArrayList<CcsProperty>();
             for (Node n : ns)
-                values.addAll(n.getProperty(propertyName, locals));
+                for (CcsProperty p : n.getProperty(propertyName, locals))
+                    if (p.isOverride() == override)
+                        values.add(p);
             if (values.size() == 1)
                 return values.get(0);
             else if (values.size() > 1) {

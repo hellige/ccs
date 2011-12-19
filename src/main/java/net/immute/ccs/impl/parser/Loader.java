@@ -20,6 +20,8 @@ import org.parboiled.support.ParsingResult;
 import org.parboiled.support.Var;
 
 import java.io.*;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Stack;
 
 public class Loader {
@@ -85,6 +87,7 @@ public class Loader {
         }
 
         @SuppressSubnodes
+        @SuppressWarnings("InfiniteRecursion")
         Rule blockComment() {
             return Sequence("/*", ZeroOrMore(FirstOf(blockComment(), Sequence(TestNot("*/"), ANY))), "*/");
         }
@@ -174,6 +177,7 @@ public class Loader {
         }
 
         @Cached
+        @SuppressWarnings("InfiniteRecursion")
         Rule stepsuffix(Var<Key> key) {
             Var<String> tmp = new Var<String>();
             Var<Value<?>> attrVal = new Var<Value<?>>();
@@ -219,15 +223,35 @@ public class Loader {
             this.fileName = fileName;
         }
 
+        protected static class Modifiers {
+            private final Set<String> modifiers = new HashSet<String>();
+
+            boolean add(String modifier) {
+                if (modifiers.contains(modifier)) return false;
+                modifiers.add(modifier);
+                return true;
+            }
+
+            boolean local() { return modifiers.contains("local"); }
+            boolean override() { return modifiers.contains("override"); }
+        }
+
+        Rule modifiers(Var<Modifiers> modifiers) {
+            return Sequence(modifiers.set(new Modifiers()),
+                    ZeroOrMore(Sequence(FirstOf("override", "local"), modifiers.get().add(match())), sp()));
+        }
+
         Rule property() {
-            Var<Boolean> local = new Var<Boolean>();
+            Var<Modifiers> modifiers = new Var<Modifiers>();
             Var<String> name = new Var<String>();
             Var<Value<?>> value = new Var<Value<?>>();
-            return Sequence(local.set(false), Optional("local", local.set(true)), sp(), ident(name), sp(), '=',
+            return Sequence(modifiers(modifiers),
+                    ident(name), sp(), '=',
                     sp(), val(value), peek().append(
-                    new AstRule.PropDef(name.get(), value.get(), new Origin(fileName, position().line), local.get())),
+                    new AstRule.PropDef(name.get(), value.get(), new Origin(fileName, position().line),
+                            modifiers.get().local(), modifiers.get().override())),
                     sp()); // put space after the append() so that we're sure to have the right line number...
-                    // TODO qi::lexeme[val >> !ident];
+            // TODO qi::lexeme[val >> !ident];
         }
 
         Rule selector(Var<SelectorBranch> result) {

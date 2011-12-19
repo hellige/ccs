@@ -6,7 +6,7 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
-public class NewRulesTest {
+public class FunctionalTests {
     private CcsContext load(String name) throws IOException {
         return new CcsDomain().loadCcsStream(getClass().getResourceAsStream("/" + name), name).build();
     }
@@ -184,5 +184,12 @@ public class NewRulesTest {
         c = root.constrain("d");
         c = c.constrain("f");
         assertEquals(2, c.getInt("y"));
+    }
+
+    @Test
+    public void testOverride() throws Exception {
+        CcsContext root = load("override.ccs");
+        CcsContext c = root.constrain("a", "b", "c").constrain("d");
+        assertEquals("correct", c.getString("test"));
     }
 }

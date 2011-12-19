@@ -19,8 +19,8 @@ public abstract class BuildContext {
         this.dag = dag;
     }
 
-    void addProperty(String name, Value value, Origin origin, boolean local) {
-        getNode().addProperty(name, new CcsProperty(value.toString(), origin, dag.nextProperty()), local);
+    void addProperty(String name, Value value, Origin origin, boolean local, boolean override) {
+        getNode().addProperty(name, new CcsProperty(value.toString(), origin, dag.nextProperty(), override), local);
     }
 
     public BuildContext descendant(Node node) {

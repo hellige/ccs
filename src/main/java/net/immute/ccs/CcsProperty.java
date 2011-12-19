@@ -4,11 +4,13 @@ public class CcsProperty {
     private final String value;
     private final Origin origin;
     private final int propertyNumber;
+    private final boolean override;
 
-    public CcsProperty(String value, Origin origin, int propertyNumber) {
+    public CcsProperty(String value, Origin origin, int propertyNumber, boolean override) {
         this.value = value;
         this.origin = origin;
         this.propertyNumber = propertyNumber;
+        this.override = override;
     }
 
     public String getValue() {
@@ -21,6 +23,10 @@ public class CcsProperty {
 
     public int getPropertyNumber() {
         return propertyNumber;
+    }
+
+    public boolean isOverride() {
+        return override;
     }
 
     public String toString() {

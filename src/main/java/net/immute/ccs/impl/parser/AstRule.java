@@ -51,18 +51,20 @@ public interface AstRule {
         private final String name;
         private final Value<?> value;
         private final Origin origin;
-        private final Boolean local;
+        private final boolean local;
+        private final boolean override;
 
-        public PropDef(String name, Value<?> value, Origin origin, Boolean local) {
+        public PropDef(String name, Value<?> value, Origin origin, boolean local, boolean override) {
             this.name = name;
             this.value = value;
             this.origin = origin;
             this.local = local;
+            this.override = override;
         }
 
         @Override
         public void addTo(BuildContext buildContext, BuildContext _) {
-            buildContext.addProperty(name, value, origin, local);
+            buildContext.addProperty(name, value, origin, local, override);
         }
 
         @Override

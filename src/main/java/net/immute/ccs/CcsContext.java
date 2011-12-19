@@ -61,7 +61,7 @@ public class CcsContext {
     }
 
     public String getString(String propertyName) {
-        CcsProperty prop = findProperty(propertyName, true);
+        CcsProperty prop = getProperty(propertyName);
         if (prop == null) throw new NoSuchPropertyException(propertyName, this);
         return prop.getValue();
     }
@@ -105,17 +105,23 @@ public class CcsContext {
         return result;
     }
 
-    private CcsProperty findProperty(String propertyName, boolean locals) {
+    private CcsProperty findProperty(String propertyName, boolean locals, boolean override) {
         // first, look in nodes newly matched by this pattern...
-        CcsProperty prop = getSearchState().findProperty(propertyName, locals);
+        CcsProperty prop = getSearchState().findProperty(propertyName, locals, override);
         if (prop != null) return prop;
 
         // if not, then inherit...
         if (parent != null) {
-            return parent.findProperty(propertyName, false);
+            return parent.findProperty(propertyName, false, override);
         }
 
         return null;
+    }
+
+    private CcsProperty findProperty(String propertyName, boolean locals) {
+        CcsProperty prop = findProperty(propertyName, locals, true);
+        if (prop == null) prop = findProperty(propertyName, locals, false);
+        return prop;
     }
 
     private SearchState getSearchState() {

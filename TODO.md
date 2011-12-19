@@ -5,3 +5,4 @@
   - functional test framework (file-driven)
   - make error handling more consistent while loading files. always throw?
   - replace recursive-search attributes with client-specified attributes, or a mix of both?
+  - data structure stats
