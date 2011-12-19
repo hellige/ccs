@@ -1,7 +1,7 @@
 package net.immute.ccs;
 
 import net.immute.ccs.impl.dag.DagBuilder;
-import net.immute.ccs.impl.parser.Loader;
+import net.immute.ccs.impl.parser.Parser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,12 +10,12 @@ import java.net.URL;
 public class CcsDomain {
     private final DagBuilder dag = new DagBuilder();
 
-    private final Loader loader;
+    private final Parser parser;
     private final CcsLogger log;
 
     public CcsDomain(CcsLogger log) {
         this.log = log;
-        loader = new Loader(log);
+        parser = new Parser(log);
     }
 
     public CcsDomain() {
@@ -45,7 +45,7 @@ public class CcsDomain {
 
     public CcsDomain loadCcsStream(InputStream stream, String fileName, ImportResolver importResolver)
             throws IOException {
-        loader.loadCcsStream(stream, fileName, dag, importResolver);
+        parser.loadCcsStream(stream, fileName, dag, importResolver);
         return this;
     }
 }

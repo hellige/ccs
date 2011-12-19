@@ -10,7 +10,7 @@ import java.util.Stack;
 
 public interface AstRule {
     void addTo(BuildContext buildContext, BuildContext baseContext);
-    boolean resolveImports(ImportResolver importResolver, Loader loader, Stack<String> inProgress);
+    boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress);
 
     public static class Import implements AstRule {
         private final String location;
@@ -28,16 +28,16 @@ public interface AstRule {
         }
 
         @Override
-        public boolean resolveImports(ImportResolver importResolver, Loader loader, Stack<String> inProgress) {
+        public boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress) {
             if (inProgress.contains(location)) {
-                loader.getLogger().error(String.format("Circular import detected involving '" + location + "'"));
+                parser.getLogger().error(String.format("Circular import detected involving '" + location + "'"));
             } else {
                 inProgress.push(location);
                 try {
-                    ast = loader.parseCcsStream(importResolver.resolve(location), location, importResolver, inProgress);
+                    ast = parser.parseCcsStream(importResolver.resolve(location), location, importResolver, inProgress);
                     if (ast != null) return true;
                 } catch (IOException e) {
-                    loader.getLogger().error(String.format("Error loading imported document '%s': %s",
+                    parser.getLogger().error(String.format("Error loading imported document '%s': %s",
                             location, e.toString()), e);
                 } finally {
                     inProgress.pop();
@@ -68,7 +68,7 @@ public interface AstRule {
         }
 
         @Override
-        public boolean resolveImports(ImportResolver _, Loader __, Stack<String> ___) {
+        public boolean resolveImports(ImportResolver _, Parser __, Stack<String> ___) {
             return true;
         }
     }
@@ -99,8 +99,8 @@ public interface AstRule {
         }
 
         @Override
-        public boolean resolveImports(ImportResolver importResolver, Loader loader, Stack<String> inProgress) {
-            for (AstRule rule : rules) if (!rule.resolveImports(importResolver, loader, inProgress)) return false;
+        public boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress) {
+            for (AstRule rule : rules) if (!rule.resolveImports(importResolver, parser, inProgress)) return false;
             return true;
         }
     }

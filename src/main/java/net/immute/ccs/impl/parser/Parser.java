@@ -24,10 +24,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
 
-public class Loader {
+public class Parser {
     private final CcsLogger log;
 
-    public Loader(CcsLogger log) {
+    public Parser(CcsLogger log) {
         this.log = log;
     }
 
@@ -61,7 +61,7 @@ public class Loader {
         return rule;
     }
 
-    private ParsingResult<AstRule> parse(Reader input, String fileName) throws IOException {
+    ParsingResult<AstRule> parse(Reader input, String fileName) throws IOException {
         CharArrayWriter tmp = new CharArrayWriter();
         FileUtils.copyAll(input, tmp);
         InputBuffer buffer = new DefaultInputBuffer(tmp.toCharArray());
@@ -75,15 +75,20 @@ public class Loader {
             return FirstOf('\n', Sequence('\r', Optional('\n')));
         }
 
-        Rule space() {
+        Rule spaceChar() {
             return FirstOf(AnyOf(" \t\f"), nl());
         }
 
         @SuppressNode
-        Rule sp() {
-            return ZeroOrMore(FirstOf(blockComment(),
+        Rule space() {
+            return OneOrMore(FirstOf(blockComment(),
                     Sequence("//", ZeroOrMore(NoneOf("\n\r")), FirstOf(nl(), EOI)),
-                    space()));
+                    spaceChar()));
+        }
+
+        @SuppressNode
+        Rule sp() {
+            return Optional(space());
         }
 
         @SuppressSubnodes
@@ -232,13 +237,13 @@ public class Loader {
                 return true;
             }
 
-            boolean local() { return modifiers.contains("local"); }
-            boolean override() { return modifiers.contains("override"); }
+            boolean local() { return modifiers.contains("@local"); }
+            boolean override() { return modifiers.contains("@override"); }
         }
 
         Rule modifiers(Var<Modifiers> modifiers) {
             return Sequence(modifiers.set(new Modifiers()),
-                    ZeroOrMore(Sequence(FirstOf("override", "local"), modifiers.get().add(match())), sp()));
+                    ZeroOrMore(Sequence(FirstOf("@override", "@local"), modifiers.get().add(match())), space()));
         }
 
         Rule property() {
@@ -249,9 +254,7 @@ public class Loader {
                     ident(name), sp(), '=',
                     sp(), val(value), peek().append(
                     new AstRule.PropDef(name.get(), value.get(), new Origin(fileName, position().line),
-                            modifiers.get().local(), modifiers.get().override())),
-                    sp()); // put space after the append() so that we're sure to have the right line number...
-            // TODO qi::lexeme[val >> !ident];
+                            modifiers.get().local(), modifiers.get().override())));
         }
 
         Rule selector(Var<SelectorBranch> result) {
@@ -278,7 +281,7 @@ public class Loader {
 
         @Cached
         Rule rule() {
-            return Sequence(sp(), FirstOf(imprt(), property(), nested()), sp(), Optional(';'), sp());
+            return Sequence(sp(), FirstOf(imprt(), property(), nested()), FirstOf(';', space(), Test('}'), EOI), sp());
         }
 
         Rule context() {
