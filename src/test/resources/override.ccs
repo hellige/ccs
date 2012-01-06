@@ -1,2 +1,2 @@
-a#b.c d : test = 'incorrect'
+a.b.c d : test = 'incorrect'
 a : @override test = 'correct'

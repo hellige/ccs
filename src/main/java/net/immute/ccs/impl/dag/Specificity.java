@@ -1,53 +1,38 @@
 package net.immute.ccs.impl.dag;
 
 public class Specificity implements Comparable<Specificity> {
-    private final int idSelectors;
-    private final int classSelectors;
-    private final int elementNames;
+    private final int values;
+    private final int names;
 
-    public Specificity(int elementNames, int classSelectors, int idSelectors) {
-        this.elementNames = elementNames;
-        this.classSelectors = classSelectors;
-        this.idSelectors = idSelectors;
+    public Specificity(int names, int values) {
+        this.names = names;
+        this.values = values;
     }
 
     public Specificity() {
-        idSelectors = 0;
-        classSelectors = 0;
-        elementNames = 0;
+        values = 0;
+        names = 0;
     }
 
     public int compareTo(Specificity s) {
-        int result = idSelectors - s.idSelectors;
-        if (result == 0) {
-            result = classSelectors - s.classSelectors;
-        }
-        if (result == 0) {
-            result = elementNames - s.elementNames;
-        }
+        int result = values - s.values;
+        if (result == 0) result = names - s.names;
         return result;
     }
 
     public String toString() {
-        return "<" + idSelectors + ", " + classSelectors + ", " + elementNames
-            + ">";
+        return "<" + values + ", " + names + ">";
     }
 
     public Specificity add(Specificity s) {
-        return new Specificity(elementNames + s.elementNames,
-                classSelectors + s.classSelectors,
-                idSelectors + s.idSelectors);
+        return new Specificity(names + s.names, values + s.values);
     }
 
     public Specificity incElementNames() {
-        return new Specificity(elementNames + 1, classSelectors, idSelectors);
+        return new Specificity(names + 1, values);
     }
 
     public Specificity incClassSelectors() {
-        return new Specificity(elementNames, classSelectors + 1, idSelectors);
-    }
-
-    public Specificity incIdSelectors() {
-        return new Specificity(elementNames, classSelectors, idSelectors + 1);
+        return new Specificity(names, values + 1);
     }
 }

@@ -1,2 +1,0 @@
-test = 'outer'
-a > b : test = 'inner'

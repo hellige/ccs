@@ -1,7 +1,0 @@
-user#me foo {
-    test = incorrect;
-}
-
-env#dev foo {
-    test = correct; //!important
-}

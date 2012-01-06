@@ -44,10 +44,10 @@ public class SearchState {
         return new SearchState(new TallyMap(tallyMap), ccsContext, log);
     }
 
-    public void extend(Key key, CcsContext context, boolean includeDirectChildren, SearchState nextState) {
+    public void extend(Key key, SearchState nextState) {
         for (Map.Entry<Specificity, Set<Node>> entry : nodes.entrySet())
             for (Node n : entry.getValue())
-                n.getChildren(key, entry.getKey(), context, includeDirectChildren, nextState);
+                n.getChildren(key, entry.getKey(), nextState);
     }
 
     private String origins(List<CcsProperty> values) {

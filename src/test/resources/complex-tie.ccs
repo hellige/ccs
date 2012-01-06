@@ -1,16 +1,16 @@
-.class2 {
+bar.class2 {
     test1 = "incorrect"
 }
 
-.class1 {
+bar.class1 {
     test1 = "correct"
 }
 
-.class1 foo {
+bar.class1 foo {
     test2 = "incorrect 1"
 }
 
-.class2 foo {
+bar.class2 foo {
     test2 = "correct"
 }
 

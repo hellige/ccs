@@ -18,34 +18,26 @@ public class CcsContext {
         key = null;
     }
 
-    private CcsContext(CcsContext parent, String element) {
+    private CcsContext(CcsContext parent, String name, String... values) {
         this.parent = parent;
-        key = new Key(element);
+        key = new Key(name, values);
     }
 
-    private CcsContext(CcsContext parent, String element, String id) {
+    private CcsContext(CcsContext parent, Key key) {
         this.parent = parent;
-        key = new Key(element);
-        key.setId(id);
+        this.key = key;
     }
 
-    private CcsContext(CcsContext parent, String element, String id,
-                       String... classes) {
-        this.parent = parent;
-        key = new Key(element, classes);
-        key.setId(id);
+    public CcsContext.Builder builder() {
+        return new Builder();
     }
 
-    public CcsContext constrain(String element) {
-        return new CcsContext(this, element);
+    public CcsContext constrain(String name) {
+        return new CcsContext(this, name);
     }
 
-    public CcsContext constrain(String element, String id) {
-        return new CcsContext(this, element, id);
-    }
-
-    public CcsContext constrain(String element, String id, String... classes) {
-        return new CcsContext(this, element, id, classes);
+    public CcsContext constrain(String name, String... values) {
+        return new CcsContext(this, name, values);
     }
 
     public String getKey() {
@@ -128,12 +120,9 @@ public class CcsContext {
         if (searchState.get() == null) {
             SearchState tmp = parent.getSearchState().newChild(this);
 
-            boolean includeDirectChildren = true;
             CcsContext p = parent;
             while (p != null) {
-                // TODO be nice to replace parent with 'this', but it's really not clear that that's even possible...
-                p.getSearchState().extend(key, parent, includeDirectChildren, tmp);
-                includeDirectChildren = false;
+                p.getSearchState().extend(key, tmp);
                 p = p.parent;
             }
 
@@ -152,6 +141,22 @@ public class CcsContext {
                 return key.toString();
         } else {
             return "<root>";
+        }
+    }
+
+    public class Builder {
+        private final Key key = new Key();
+
+        private Builder() {}
+
+        public Builder add(String name, String... values) {
+            key.addName(name);
+            for (String value : values) key.addValue(name, value);
+            return this;
+        }
+
+        public CcsContext build() {
+            return new CcsContext(CcsContext.this, key);
         }
     }
 }

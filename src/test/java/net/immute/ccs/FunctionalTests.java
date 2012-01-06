@@ -12,40 +12,6 @@ public class FunctionalTests {
     }
 
     @Test
-    public void oldFunctionalTest() throws Exception {
-        CcsContext root = load("test.ccs");
-
-        CcsContext c = root.constrain("hi");
-        c = c.constrain("body");
-        c = c.constrain("bar");
-        c = c.constrain("em");
-        CcsContext c2 = c.constrain("baz");
-        assertEquals("hi", c.getString("foo"));
-        assertEquals("there", c2.getString("foo"));
-        assertEquals("hi", c.getString("foo"));
-        CcsContext c3 = c.constrain("blah");
-        assertEquals("hi", c3.getString("foo"));
-        CcsContext c4 = c2.constrain("em");
-        assertEquals("!", c4.getString("foo"));
-
-        c = root.constrain("hi");
-        c = c.constrain("body", "doit");
-        c = c.constrain("bar");
-        c = c.constrain("em", null, "foo");
-        c2 = c.constrain("baz");
-        assertEquals("hi", c.getString("foo"));
-        assertEquals("there", c2.getString("foo"));
-        assertEquals("hi", c.getString("foo"));
-        c3 = c.constrain("blah");
-        assertEquals("hi", c3.getString("foo"));
-        c4 = c2.constrain("em");
-        assertEquals("ARGH", c4.getString("foo"));
-        assertEquals("WTF", c4.getString("rootTest"));
-        assertEquals("c", c4.getString("childTest"));
-        assertEquals("b", c4.getString("classTest"));
-    }
-
-    @Test
     public void testBestBeforeClosest() throws Exception {
         CcsContext c = load("best-before-closest.ccs");
         c = c.constrain("first");
@@ -57,14 +23,14 @@ public class FunctionalTests {
     public void testTiedSpecificities() throws Exception {
         CcsContext c = load("tied-specificities.ccs");
         c = c.constrain("first");
-        c = c.constrain("second", null, "class1", "class2");
+        c = c.constrain("second", "class1", "class2");
         assertEquals("correct", c.getString("test"));
     }
 
     @Test
     public void testComplexTie() throws Exception {
         CcsContext c = load("complex-tie.ccs");
-        c = c.constrain("bar", null, "class1", "class2");
+        c = c.constrain("bar", "class1", "class2");
         assertEquals("correct", c.getString("test1"));
         c = c.constrain("foo");
         assertEquals("correct", c.getString("test2"));
@@ -102,7 +68,7 @@ public class FunctionalTests {
         c = c.constrain("a");
         c = c.constrain("b");
         assertEquals("correct1", c.getString("test"));
-        CcsContext c2 = c.constrain("c", null, "class1");
+        CcsContext c2 = c.constrain("c", "class1");
         assertEquals("correct2", c2.getString("test"));
 
         c2 = c.constrain("d");
@@ -118,7 +84,7 @@ public class FunctionalTests {
         assertEquals("correct1", c.getString("test"));
         c = c.constrain("c");
         assertEquals("correct2", c.getString("test"));
-        c = c.constrain("c", null, "b");
+        c = c.constrain("c", "b");
         assertEquals("correct1", c.getString("test"));
     }
 
@@ -145,20 +111,6 @@ public class FunctionalTests {
         c2 = c2.constrain("b");
         c2 = c2.constrain("d");
         assertEquals("bottom", c2.getString("test2"));
-    }
-
-    @Test
-    public void testDirectChild() throws Exception {
-        CcsContext root = load("direct-child.ccs");
-        CcsContext c = root.constrain("a");
-        c = c.constrain("b");
-        assertEquals("inner", c.getString("test"));
-
-        c = root.constrain("root");
-        c = c.constrain("a");
-        c = c.constrain("c");
-        c = c.constrain("b");
-        assertEquals("outer", c.getString("test"));
     }
 
     @Test
@@ -191,5 +143,14 @@ public class FunctionalTests {
         CcsContext root = load("override.ccs");
         CcsContext c = root.constrain("a", "b", "c").constrain("d");
         assertEquals("correct", c.getString("test"));
+    }
+
+    @Test
+    public void testSameStep() throws Exception {
+        CcsContext root = load("same-step.ccs");
+        CcsContext c = root.constrain("a", "b", "c").constrain("d", "e");
+        assertEquals("nope", c.getString("test"));
+        c = root.builder().add("a", "b", "c").add("d", "e").build();
+        assertEquals("yep", c.getString("test"));
     }
 }

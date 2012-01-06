@@ -1,5 +1,5 @@
 a { test = "top" }
-a + { b { test = "bottom" } }
+a { b > { test = "bottom" } }
 
 test2 = "top"
-a { b + { c { d + { e { @local test2 = "bottom" }}}}}
+a > { b { c > { d { e { @local test2 = "bottom" }}}}}

@@ -1,2 +1,2 @@
-(a b#b, a b c) + c { test = 'correct' }
-#c { test = 'incorrect' }
+(a > b.b, a > b > c) c { test = 'correct' }
+c.c { test = 'incorrect' }

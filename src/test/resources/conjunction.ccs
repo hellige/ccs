@@ -1,3 +1,3 @@
-a + b { test = 'correct1' }
-a + c + .class1 { test = 'correct2' }
-a + b { d { test = 'correct3' } }
+a b { test = 'correct1' }
+a c c.class1 { test = 'correct2' }
+a b > { d { test = 'correct3' } }

@@ -156,61 +156,49 @@ public class Parser {
     }
 
     static class SelectorParser extends CcsBaseParser<SelectorLeaf> {
-        protected boolean setElement(Var<Key> key, String element) {
-            key.get().setElement(element);
+        protected boolean addValue(Var<Key> key, Var<String> name, Var<String> value) {
+            key.get().addValue(name.get(), value.get());
             return true;
         }
 
-        protected boolean addClass(Var<Key> key, String cls) {
-            key.get().addClass(cls);
-            return true;
-        }
-
-        protected boolean setId(Var<Key> key, String id) {
-            key.get().setId(id);
-            return true;
-        }
-
-        protected boolean setAttribute(Var<Key> key, String attr, Value<?> value) {
-            key.get().setAttribute(attr, value.toString()); // TODO use real value, not string
-            return true;
-        }
-
-        protected boolean setDirect(Var<Key> key) {
-            key.get().setDirectChild(true);
+        protected boolean addName(Var<Key> key, Var<String> name) {
+            key.get().addName(name.get());
             return true;
         }
 
         @Cached
         @SuppressWarnings("InfiniteRecursion")
+        Rule vals(Var<Key> key, Var<String> name) {
+            Var<String> val = new Var<String>();
+            return Sequence('.', ident(val), addValue(key, name, val), Optional(vals(key, name)));
+        }
+
+        Rule namevals(Var<Key> key) {
+            Var<String> name = new Var<String>();
+            return Sequence(ident(name), addName(key, name), Optional(vals(key, name)));
+        }
+
+        @Cached
+        @SuppressWarnings("InfiniteRecursion")
         Rule stepsuffix(Var<Key> key) {
-            Var<String> tmp = new Var<String>();
-            Var<Value<?>> attrVal = new Var<Value<?>>();
-            return FirstOf(
-                    Sequence('.', ident(tmp), addClass(key, tmp.get()), Optional(stepsuffix(key))),
-                    Sequence('#', ident(tmp), setId(key, tmp.get()), Optional(stepsuffix(key))),
-                    Sequence('[', sp(), ident(tmp), sp(), '=', sp(), val(attrVal), sp(), ']',
-                            setAttribute(key, tmp.get(), attrVal.get()), Optional(stepsuffix(key))));
+            return Sequence('/', namevals(key), Optional(stepsuffix(key)));
         }
 
         Rule step() {
             Var<Key> key = new Var<Key>();
-            Var<String> tmp = new Var<String>();
             // note: we have to set key's initial value below (rather than via the constructor) if we want things
             // to work in jarjar. which we do.
-            return Sequence(key.set(new Key(null)), Optional('>', sp(), setDirect(key)), FirstOf(
-                    Sequence(FirstOf('*', Sequence(ident(tmp), setElement(key, tmp.get()))), Optional(stepsuffix(key)),
-                            push(SelectorLeaf.step(key.get()))),
-                    Sequence(stepsuffix(key), push(SelectorLeaf.step(key.get()))),
+            return Sequence(key.set(new Key()), FirstOf(
+                    Sequence(namevals(key), Optional(stepsuffix(key)), push(SelectorLeaf.step(key.get()))),
                     Sequence('(', sum(), ')')));
         }
 
         Rule term() {
-            return Sequence(step(), ZeroOrMore(sp(), Sequence(step(), push(pop(1).descendant(pop())))));
+            return Sequence(step(), ZeroOrMore(sp(), '>', sp(), step(), push(pop(1).descendant(pop()))));
         }
 
         Rule product() {
-            return Sequence(term(), ZeroOrMore(sp(), '+', sp(), term(), push(pop(1).conjunction(pop()))));
+            return Sequence(term(), ZeroOrMore(sp(), term(), push(pop(1).conjunction(pop()))));
         }
 
         Rule sum() {
@@ -259,7 +247,7 @@ public class Parser {
 
         Rule selector(Var<SelectorBranch> result) {
             Var<Boolean> conj = new Var<Boolean>();
-            return Sequence(conj.set(false), selectorParser.sum(), sp(), Optional("+", conj.set(true)),
+            return Sequence(conj.set(true), selectorParser.sum(), sp(), Optional('>', conj.set(false)),
                     result.set(conj.get()
                             ? SelectorBranch.conjunction(selectorParser.pop())
                             : SelectorBranch.descendant(selectorParser.pop())));

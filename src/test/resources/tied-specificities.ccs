@@ -1,7 +1,7 @@
-.class2 {
+second.class2 {
     test = "foo"
 }
 
-.class1 {
+second.class1 {
     test = "correct"
 }

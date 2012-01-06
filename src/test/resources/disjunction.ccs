@@ -1,2 +1,2 @@
-a c, .b { test = 'correct1' }
-a c c { test = 'correct2' }
+a > c, c.b { test = 'correct1' }
+a > c > c { test = 'correct2' }

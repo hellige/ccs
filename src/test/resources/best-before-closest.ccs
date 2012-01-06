@@ -1,4 +1,4 @@
-second#id {
+second.id {
     test = "correct"
 }
 
