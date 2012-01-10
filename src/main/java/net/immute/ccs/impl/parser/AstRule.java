@@ -2,6 +2,7 @@ package net.immute.ccs.impl.parser;
 
 import net.immute.ccs.ImportResolver;
 import net.immute.ccs.Origin;
+import net.immute.ccs.impl.dag.Key;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -69,6 +70,24 @@ public interface AstRule {
 
         @Override
         public boolean resolveImports(ImportResolver _, Parser __, Stack<String> ___) {
+            return true;
+        }
+    }
+
+    public class Constraint implements AstRule {
+        private final Key key;
+
+        public Constraint(Key key) {
+            this.key = key;
+        }
+
+        @Override
+        public void addTo(BuildContext buildContext, BuildContext baseContext) {
+            buildContext.addConstraint(key);
+        }
+
+        @Override
+        public boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress) {
             return true;
         }
     }

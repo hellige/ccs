@@ -28,27 +28,27 @@ public class ParserTest {
         Parser p = new Parser(new CcsLogger.StderrCcsLogger());
         pass(p, "");
         pass(p, "@import 'file'");
-        pass(p, "@context (foo #bar > baz)");
-        pass(p, "@context (foo .bar > baz +)");
+        pass(p, "@context (foo.bar > baz)");
+        pass(p, "@context (foo x.bar > baz >)");
         pass(p, "prop = 'val'");
-        pass(p, "elem#id {}");
-        pass(p, "elem#id {prop = 'val'}");
-        pass(p, ".class.class blah > elem#id {prop=43}");
-        pass(p, ".class.class blah > elem#id {prop=2.3}");
-        pass(p, ".class.class blah > elem#id {prop=\"val\"}");
-        pass(p, ".class.class blah > elem#id {prop=0xAB12}");
-        fail(p, ".class.class blah > elem# id {prop=2.3}");
-        fail(p, ".class. class > elem#id {prop=\"val\"}");
+        pass(p, "elem.id {}");
+        pass(p, "elem.id {prop = 'val'}");
+        pass(p, "a.class.class blah > elem.id {prop=43}");
+        pass(p, "a.class.class blah > elem.id {prop=2.3}");
+        pass(p, "a.class.class blah > elem.id {prop=\"val\"}");
+        pass(p, "a.class.class blah > elem.id {prop=0xAB12}");
+        fail(p, "a.class.class blah > elem. id {prop=2.3}");
+        fail(p, "a.class. class > elem#id {prop=\"val\"}");
         fail(p, "blah");
         fail(p, "@import 'file'; @context (foo)");
-        pass(p, ".class { @import 'file' }");
-        fail(p, ".class { @context + (foo) }");
-        pass(p, "elem#id { prop = 'val'; prop2 = 31337 }");
-        pass(p, "* > * foo *.blah { p = 1; }");
-        pass(p, "[prop='val'].foo[ p = 'hmm'] { p = 1; }");
-        pass(p, "a b + c d {p=1}");
-        pass(p, "(a b) + (c d) {p=1}");
-        pass(p, ".\"foo\" 'bar' {'test' = 1};");
+        pass(p, "a.class { @import 'file' }");
+        fail(p, "a.class { @context > (foo) }");
+        pass(p, "elem.id { prop = 'val'; prop2 = 31337 }");
+        pass(p, "prop.'val'/a.foo/p.'hmm' { p = 1; }");
+        pass(p, "a b > c d {p=1}");
+        pass(p, "(a > b) (c > d) {p=1}");
+        pass(p, "a > (b c) > d {p=1}");
+        pass(p, "a.\"foo\" 'bar' {'test' = 1};");
     }
 
     @Test
@@ -59,7 +59,7 @@ public class ParserTest {
         pass(p, "/* multi-line comment */");
         pass(p, "prop = /* comment */ 'val'");
         pass(p, "prop = /* comment /*nest*/ more */ 'val'");
-        pass(p, "elem#id /* comment */ {prop = 'val'}");
+        pass(p, "elem.id /* comment */ {prop = 'val'}");
         pass(p, "// comment\nelem { prop = 'val' prop = 'val' }");
     }
 
@@ -80,10 +80,9 @@ public class ParserTest {
     @Test
     public void selectorSectionTests() throws IOException {
         Parser p = new Parser(new CcsLogger.StderrCcsLogger());
-        pass(p, "foo + { bar {}}");
-        pass(p, "foo + { > bar + > baz {}}");
+        pass(p, "foo > { bar {}}");
+        pass(p, "foo > { bar > baz {}}");
         pass(p, "bar > baz {}");
-        pass(p, "bar + baz {}");
-        pass(p, "> bar + baz {}");
+        pass(p, "bar baz {}");
     }
 }

@@ -153,4 +153,11 @@ public class FunctionalTests {
         c = root.builder().add("a", "b", "c").add("d", "e").build();
         assertEquals("yep", c.getString("test"));
     }
+
+    @Test
+    public void testConstraintsInCcs() throws Exception {
+        CcsContext root = load("constraints-in-ccs.ccs");
+        CcsContext c = root.constrain("a", "b");
+        assertEquals("correct", c.getString("test"));
+    }
 }

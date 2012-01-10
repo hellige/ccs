@@ -3,6 +3,7 @@ package net.immute.ccs.impl.parser;
 import net.immute.ccs.CcsProperty;
 import net.immute.ccs.Origin;
 import net.immute.ccs.impl.dag.DagBuilder;
+import net.immute.ccs.impl.dag.Key;
 import net.immute.ccs.impl.dag.Node;
 import net.immute.ccs.impl.dag.Tally;
 
@@ -21,6 +22,10 @@ public abstract class BuildContext {
 
     void addProperty(String name, Value value, Origin origin, boolean local, boolean override) {
         getNode().addProperty(name, new CcsProperty(value.toString(), origin, dag.nextProperty(), override), local);
+    }
+
+    public void addConstraint(Key key) {
+        getNode().addConstraint(key);
     }
 
     public BuildContext descendant(Node node) {

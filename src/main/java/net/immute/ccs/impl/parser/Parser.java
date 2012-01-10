@@ -178,10 +178,13 @@ public class Parser {
             return Sequence(ident(name), addName(key, name), Optional(vals(key, name)));
         }
 
-        @Cached
-        @SuppressWarnings("InfiniteRecursion")
         Rule stepsuffix(Var<Key> key) {
-            return Sequence('/', namevals(key), Optional(stepsuffix(key)));
+            return Sequence('/', singlestep(key));
+        }
+
+        @Cached
+        Rule singlestep(Var<Key> key) {
+            return Sequence(namevals(key), Optional(stepsuffix(key)));
         }
 
         Rule step() {
@@ -189,7 +192,7 @@ public class Parser {
             // note: we have to set key's initial value below (rather than via the constructor) if we want things
             // to work in jarjar. which we do.
             return Sequence(key.set(new Key()), FirstOf(
-                    Sequence(namevals(key), Optional(stepsuffix(key)), push(SelectorLeaf.step(key.get()))),
+                    Sequence(singlestep(key), push(SelectorLeaf.step(key.get()))),
                     Sequence('(', sum(), ')')));
         }
 
@@ -259,17 +262,24 @@ public class Parser {
                     peek().append(new AstRule.Import(location.get().get())));
         }
 
+        Rule constraint() {
+            Var<Key> key = new Var<Key>();
+            return Sequence(key.set(new Key()), "@constrain", sp(), selectorParser.singlestep(key),
+                    peek().append(new AstRule.Constraint(key.get())));
+        }
+
         Rule nested() {
             Var<SelectorBranch> selector = new Var<SelectorBranch>();
             return Sequence(selector(selector), sp(), push(new AstRule.Nested(selector.get())), FirstOf(
-                    Sequence(':', sp(), FirstOf(imprt(), property())),
+                    Sequence(':', sp(), FirstOf(imprt(), constraint(), property())),
                     Sequence('{', sp(), ZeroOrMore(rule()), '}')),
                     peek(1).append(pop()));
         }
 
         @Cached
         Rule rule() {
-            return Sequence(sp(), FirstOf(imprt(), property(), nested()), FirstOf(';', space(), Test('}'), EOI), sp());
+            return Sequence(sp(), FirstOf(imprt(), constraint(), property(), nested()),
+                    FirstOf(';', space(), Test('}'), EOI), sp());
         }
 
         Rule context() {

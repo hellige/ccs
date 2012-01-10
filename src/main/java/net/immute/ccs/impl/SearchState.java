@@ -19,6 +19,9 @@ public class SearchState {
     private final TallyMap tallyMap;
     private final CcsLogger log;
     private final CcsContext ccsContext;
+    private final Key key;
+
+    private boolean constraintsChanged;
 
     private static final Comparator<CcsProperty> PROP_COMPARATOR =
             new Comparator<CcsProperty>() {
@@ -31,23 +34,27 @@ public class SearchState {
         nodes.put(new Specificity(), singleton(root));
         tallyMap = new TallyMap();
         this.ccsContext = ccsContext;
+        this.key = null;
         this.log = log;
     }
 
-    private SearchState(TallyMap tallyMap, CcsContext ccsContext, CcsLogger log) {
+    private SearchState(TallyMap tallyMap, CcsContext ccsContext, Key key, CcsLogger log) {
         this.tallyMap = tallyMap;
         this.ccsContext = ccsContext;
+        this.key = key;
         this.log = log;
     }
 
-    public SearchState newChild(CcsContext ccsContext) {
-        return new SearchState(new TallyMap(tallyMap), ccsContext, log);
+    public SearchState newChild(CcsContext ccsContext, Key key) {
+        return new SearchState(new TallyMap(tallyMap), ccsContext, key, log);
     }
 
-    public void extend(Key key, SearchState nextState) {
-        for (Map.Entry<Specificity, Set<Node>> entry : nodes.entrySet())
+    public boolean extendWith(SearchState priorState) {
+        constraintsChanged = false;
+        for (Map.Entry<Specificity, Set<Node>> entry : priorState.nodes.entrySet())
             for (Node n : entry.getValue())
-                n.getChildren(key, entry.getKey(), nextState);
+                n.getChildren(key, entry.getKey(), this);
+        return constraintsChanged;
     }
 
     private String origins(List<CcsProperty> values) {
@@ -95,12 +102,20 @@ public class SearchState {
         getBucket(spec).add(node);
     }
 
+    public String getKey() {
+        return key.toString();
+    }
+
     public Tally.TallyState getTallyState(Tally.AndTally tally) {
         return tallyMap.getTallyState(tally);
     }
 
     public void setTallyState(Tally.AndTally tally, Tally.TallyState state) {
         tallyMap.setTallyState(tally, state);
+    }
+
+    public void constrain(Key constraints) {
+        constraintsChanged |= key.addAll(constraints);
     }
 
     private class TallyMap {

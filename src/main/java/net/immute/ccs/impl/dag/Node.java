@@ -12,6 +12,7 @@ public class Node {
     private final Set<Tally> tallies = new HashSet<Tally>();
     private final HashMap<String, List<CcsProperty>> props = new HashMap<String, List<CcsProperty>>();
     private final HashMap<String, List<CcsProperty>> localProps = new HashMap<String, List<CcsProperty>>();
+    private final Key constraints = new Key();
 
     public Set<Tally> getTallies() {
         return tallies;
@@ -53,8 +54,13 @@ public class Node {
         values.add(value);
     }
 
+    public void addConstraint(Key key) {
+        constraints.addAll(key);
+    }
+
     public void activate(Specificity spec, SearchState searchState) {
         searchState.add(spec, this);
+        searchState.constrain(constraints);
         for (Tally tally : this.tallies) tally.activate(this, spec, searchState);
     }
 }

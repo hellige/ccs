@@ -4,28 +4,22 @@ import net.immute.ccs.impl.SearchState;
 import net.immute.ccs.impl.dag.Key;
 import net.immute.ccs.impl.dag.Node;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 public class CcsContext {
-    private final AtomicReference<SearchState> searchState = new AtomicReference<SearchState>();
-
+    private final SearchState searchState;
     private final CcsContext parent;
-    private final Key key;
 
     CcsContext(Node root, CcsLogger log) {
-        searchState.set(new SearchState(root, this, log));
         parent = null;
-        key = null;
-    }
-
-    private CcsContext(CcsContext parent, String name, String... values) {
-        this.parent = parent;
-        key = new Key(name, values);
+        searchState = new SearchState(root, this, log);
     }
 
     private CcsContext(CcsContext parent, Key key) {
         this.parent = parent;
-        this.key = key;
+        searchState = getSearchState(key);
+    }
+
+    private CcsContext(CcsContext parent, String name, String... values) {
+        this(parent, new Key(name, values));
     }
 
     public CcsContext.Builder builder() {
@@ -41,7 +35,7 @@ public class CcsContext {
     }
 
     public String getKey() {
-        return key.toString();
+        return searchState.getKey();
     }
 
     public boolean hasProperty(String propertyName) {
@@ -99,7 +93,7 @@ public class CcsContext {
 
     private CcsProperty findProperty(String propertyName, boolean locals, boolean override) {
         // first, look in nodes newly matched by this pattern...
-        CcsProperty prop = getSearchState().findProperty(propertyName, locals, override);
+        CcsProperty prop = searchState.findProperty(propertyName, locals, override);
         if (prop != null) return prop;
 
         // if not, then inherit...
@@ -116,29 +110,29 @@ public class CcsContext {
         return prop;
     }
 
-    private SearchState getSearchState() {
-        if (searchState.get() == null) {
-            SearchState tmp = parent.getSearchState().newChild(this);
+    private SearchState getSearchState(Key key) {
+        SearchState tmp = parent.searchState.newChild(this, key);
 
+        boolean constraintsChanged;
+        do {
+            constraintsChanged = false;
             CcsContext p = parent;
             while (p != null) {
-                p.getSearchState().extend(key, tmp);
+                constraintsChanged |= tmp.extendWith(p.searchState);
                 p = p.parent;
             }
+        } while (constraintsChanged);
 
-            searchState.compareAndSet(null, tmp);
-        }
-
-        return searchState.get();
+        return tmp;
     }
 
     @Override
     public String toString() {
         if (parent != null) {
             if (parent.parent != null)
-                return parent + " > " + key;
+                return parent + " > " + getKey();
             else
-                return key.toString();
+                return getKey();
         } else {
             return "<root>";
         }

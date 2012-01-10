@@ -1,0 +1,3 @@
+a.b: @constrain a.c
+a.b.c: @constrain d.e
+a.b.c/d.e: test = "correct"
