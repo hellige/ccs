@@ -4,8 +4,11 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class Key {
+    private final static Pattern identRegex = Pattern.compile("^[A-Za-z$_][A-Za-z0-9$_]*$");
+
     // we use a linked map only so that toString() preserves the input order of names. we may still
     // re-order values, but Set makes everything so much easier than List that it hardly seems worth it...
     private final Map<String, Set<String>> values = new LinkedHashMap<String, Set<String>>();
@@ -82,7 +85,12 @@ public class Key {
         for (Map.Entry<String, Set<String>> pair : values.entrySet()) {
             if (!first) result.append('/');
             result.append(pair.getKey());
-            for (String v : pair.getValue()) result.append('.').append(v);
+            for (String v : pair.getValue()) {
+                if (identRegex.matcher(v).matches())
+                    result.append('.').append(v);
+                else
+                    result.append(".'").append(v.replace("'", "\\'")).append('\'');
+            }
             first = false;
         }
         return result.toString();
