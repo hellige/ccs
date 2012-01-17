@@ -1,17 +1,15 @@
 package net.immute.ccs.impl.dag;
 
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class Key {
     private final static Pattern identRegex = Pattern.compile("^[A-Za-z$_][A-Za-z0-9$_]*$");
 
-    // we use a linked map only so that toString() preserves the input order of names. we may still
-    // re-order values, but Set makes everything so much easier than List that it hardly seems worth it...
-    private final Map<String, Set<String>> values = new LinkedHashMap<String, Set<String>>();
+    // we use a linked map only so that toString() preserves the input order of names. similary,
+    // we insist upon linked sets for the names.
+    private final LinkedHashMap<String, LinkedHashSet<String>> values =
+            new LinkedHashMap<String, LinkedHashSet<String>>();
 
     private Specificity specificity = new Specificity();
 
@@ -24,7 +22,7 @@ public class Key {
 
     public void addName(String name) {
         if (!values.containsKey(name)) {
-            values.put(name, new HashSet<String>());
+            values.put(name, new LinkedHashSet<String>());
             specificity = specificity.incElementNames();
         }
     }
@@ -36,10 +34,10 @@ public class Key {
     public boolean addValue(String name, String value) {
         boolean changed = false;
 
-        Set<String> vals = values.get(name);
+        LinkedHashSet<String> vals = values.get(name);
         if (vals == null) {
             changed = true;
-            vals = new HashSet<String>();
+            vals = new LinkedHashSet<String>();
             values.put(name, vals);
             specificity = specificity.incElementNames();
         }
@@ -55,7 +53,7 @@ public class Key {
 
     public boolean addAll(Key key) {
         boolean changed = false;
-        for (Map.Entry<String, Set<String>> pair : key.values.entrySet()) {
+        for (Map.Entry<String, LinkedHashSet<String>> pair : key.values.entrySet()) {
             for (String value : pair.getValue())
                 changed |= addValue(pair.getKey(), value);
         }
@@ -71,7 +69,7 @@ public class Key {
      * @return true if this object, as a pattern, matches the given key.
      */
     public boolean matches(Key k) {
-        for (Map.Entry<String, Set<String>> pair : values.entrySet()) {
+        for (Map.Entry<String, LinkedHashSet<String>> pair : values.entrySet()) {
             if (!k.values.containsKey(pair.getKey())) return false;
             if (!k.values.get(pair.getKey()).containsAll(pair.getValue())) return false;
         }
@@ -82,7 +80,7 @@ public class Key {
     public String toString() {
         StringBuilder result = new StringBuilder();
         boolean first = true;
-        for (Map.Entry<String, Set<String>> pair : values.entrySet()) {
+        for (Map.Entry<String, LinkedHashSet<String>> pair : values.entrySet()) {
             if (!first) result.append('/');
             result.append(pair.getKey());
             for (String v : pair.getValue()) {
