@@ -4,6 +4,8 @@ TEST_SRCS := $(shell find src/test/java -name '*.java')
 TEST_CLASSES := $(shell find src/test/java -name '*Test.java' \
                     | sed -e 's:src/test/java/::' -e 's/.java$$//' -e 's:/:.:g')
 
+all: dist
+
 dist: dist/ccs.jar dist/ccs-src.jar
 
 compile:
