@@ -38,11 +38,11 @@ public class ParserTest {
         pass(p, "a.class.class blah > elem.id {prop=\"val\"}");
         pass(p, "a.class.class blah > elem.id {prop=0xAB12}");
         fail(p, "a.class.class blah > elem. id {prop=2.3}");
-        fail(p, "a.class. class > elem#id {prop=\"val\"}");
+        fail(p, "a.class. class > elem.id {prop=\"val\"}");
         fail(p, "blah");
         fail(p, "@import 'file'; @context (foo)");
         pass(p, "a.class { @import 'file' }");
-        fail(p, "a.class { @context > (foo) }");
+        fail(p, "a.class { @context (foo) }");
         pass(p, "elem.id { prop = 'val'; prop2 = 31337 }");
         pass(p, "prop.'val'/a.foo/p.'hmm' { p = 1; }");
         pass(p, "a b > c d {p=1}");
