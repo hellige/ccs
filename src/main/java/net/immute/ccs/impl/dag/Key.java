@@ -23,7 +23,7 @@ public class Key {
     public void addName(String name) {
         if (!values.containsKey(name)) {
             values.put(name, new LinkedHashSet<String>());
-            specificity = specificity.incElementNames();
+            specificity = specificity.incNames();
         }
     }
 
@@ -39,13 +39,13 @@ public class Key {
             changed = true;
             vals = new LinkedHashSet<String>();
             values.put(name, vals);
-            specificity = specificity.incElementNames();
+            specificity = specificity.incNames();
         }
 
         if (!vals.contains(value)) {
             changed = true;
             vals.add(value);
-            specificity = specificity.incClassSelectors();
+            specificity = specificity.incValues();
         }
 
         return changed;

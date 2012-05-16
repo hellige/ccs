@@ -28,11 +28,11 @@ public class Specificity implements Comparable<Specificity> {
         return new Specificity(names + s.names, values + s.values);
     }
 
-    public Specificity incElementNames() {
+    public Specificity incNames() {
         return new Specificity(names + 1, values);
     }
 
-    public Specificity incClassSelectors() {
+    public Specificity incValues() {
         return new Specificity(names, values + 1);
     }
 }
