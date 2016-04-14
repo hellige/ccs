@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Cascading Configuration System</title>
+
+    <meta name="description" content="CCS: a better way to configure your application">
+    <meta name="author" content="Matt Hellige">
+    <meta name="author" content="Matt Godbolt">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/blood.css" id="theme">
+
+    <!-- Code syntax highlighting -->
+    <link rel="stylesheet" href="lib/css/zenburn.css">
+
+    <!-- Printing and PDF exports -->
+    <script>
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = window.location.search.match(/print-pdf/gi) ? 'css/print/pdf.css' : 'css/print/paper.css';
+        document.getElementsByTagName('head')[0].appendChild(link);
+    </script>
+
+    <!--[if lt IE 9]>
+    <script src="lib/js/html5shiv.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+
+<div class="reveal">
+    <div class="slides">
+        <section>
+            <h1>CCS</h1>
+            <h4>Better configuration</h4>
+        </section>
+        <section>
+            <h2>Config</h2>
+            <ul>
+                <li class="fragment">Server app</li>
+                <li class="fragment">UDP listener</li>
+                <li class="fragment"><code>port = 12345</code></li>
+            </ul>
+
+            <aside class="notes">
+                Consider a typical config property example... Say we have an
+                app that's going to listen for some UDP data and we need, among
+                other things, a port...
+            </aside>
+        </section>
+        <section>
+            <h2>Variability</h2>
+            <ul>
+                <li class="fragment">Environment (dev/prod/labs/...)</li>
+                <li class="fragment">Username</li>
+                <li class="fragment">Deployed hostname</li>
+                <li class="fragment">Product we're trading</li>
+                <li class="fragment">More contrived things like "subproduct"</li>
+            </ul>
+            <p class="fragment"><em>(Maybe you can already see this starting to suck...)</em></p>
+
+            <aside class="notes">
+                Well, when is this going to be different? If it were constant,
+                we'd leave it in the code... For example...
+            </aside>
+        </section>
+        <section>
+            <h2>The Usual Approach</h2>
+            <div class="fragment">
+                <h3>Naming conventions!</h3>
+                <pre><code data-trim>
+udp.prod.properties
+udp.dev.properties
+udp.defaults-mhellige.properties
+                </code></pre>
+            </div>
+            <div class="fragment">
+                <h3>[ini] sections!</h3>
+                <pre><code data-trim>
+[prod]
+port=123
+[dev]
+port=456
+                </code></pre>
+            </div>
+
+            <aside class="notes">
+                Naming conventions! [ini] sections! Let's not even talk about
+                XML... And this is already a pretty high-dimensional space!
+            </aside>
+        </section>
+        <section>
+            <h2>Another property!</h2>
+            <ul>
+                <li>Another UDP listener</li>
+                <li>An embedded web server</li>
+                <li>More ports, more problems!</li>
+            </ul>
+
+            <aside class="notes">
+                Now suppose we make our app more complicated: we had another
+                UDP listener with its own port, and maybe an embedded web
+                server, too...
+            </aside>
+        </section>
+        <section>
+            <h2>More Conventions!</h2>
+            <div class="fragment">
+                <h3>In the filenames!</h3>
+                <pre><code data-trim>
+udp-a.prod.properties
+udp-b.prod.properties
+                </code></pre>
+            </div>
+            <div class="fragment">
+                <h3>In the property names!</h3>
+                <pre><code data-trim>
+udp.a.port=123
+udp.b.port=124
+                </code></pre>
+            </div>
+            <p class="fragment"><em>(But then where can I put defaults?)</em></p>
+
+            <aside class="notes">
+                From bad to worse...
+            </aside>
+        </section>
+        <section>
+            <h4>A Better Way</h4>
+            <h3>It's all just "context"</h3>
+            <p><code class="ccs">env.prod env.dev</code></p>
+            <p><code class="ccs">user.mhellige user.mgodbolt</code></p>
+            <p><code class="ccs">host.'sud-chidev02'</code></p>
+            <p><code class="ccs">udpListener.a udpListener.b webServer</code></p>
+
+            <aside class="notes">
+                It's all just context. It's all mostly orthogonal. Let the user
+                express the combinations they care to capture, and find another
+                way of expressing priority.
+            </aside>
+        </section>
+        <section>
+            <h2>Example</h2>
+            <pre><code class="ccs" data-trim>
+env.prod { // this is the production config
+  udpListener.a : port = 123
+  udpListener.b : port = 456
+}
+env.dev udpListener : port = 12345
+
+webServer {
+  port = 8080 // all environments
+  user.mhellige : port = 8081 /* i prefer this one */
+}
+            </code></pre>
+            <ul class="fragment">
+                <li>Conjunction by default</li>
+                <li>Nesting is just sugar</li>
+                <li>Most specific is highest priority.</li>
+            </ul>
+
+            <aside class="notes">
+                Now, imagining that we have a way of capturing all this
+                relevant context... how might we write our config? Talk through
+                this at some length...
+            </aside>
+        </section>
+        <section>
+            <h2>Very Flexible</h2>
+            <ul>
+                <li>You decide how to group things and divide files</li>
+                <li>You decide which context matters and when</li>
+                <li>You decide how much to factor out vs repeat (<code>@context</code>)</li>
+            </ul>
+        </section>
+        <section>
+          <section>
+            <h3>What's the Idea?</h3>
+            <p>We can construct a <strong>context path</strong> for each query and
+              think of CCS as a pattern matching language for context paths.</p>
+            <pre><code class="ccs" data-trim>
+desk.foo/exchange.NYSE/product.ABC > env.prod > dataCenter.unknown
+ > appConfig.smq > user.produsername > host.rh-abcdef13
+ > cpuType.haswell > module.core > threads > thread.TimerFiber
+            </code></pre>
+            <div class="fragment">
+            <p>CCS lets us match on this path using conjunction, disjunction,
+              and descendant operations, so with rules like</p>
+            <pre><code class="ccs" data-trim>
+hungCommandThresholdMillis = 2000
+cpuType.haswell : hungCommandThresholdMillis = 1000
+thread.TimerFiber cpuType.haswell : hungCommandThresholdMillis = 5000
+thread.TimerFiber cpuType.westmere : hungCommandThresholdMillis = 10000
+            </code></pre>
+            </div>
+            <div class="fragment">
+              <p>We would find that</p>
+              <pre><code class="ccs">hungCommandThresholdMillis = 5000</code></pre>
+            </div>
+            <aside class="notes">
+              We can think of all of this contextual information as forming a
+              tree, a tree in which all these dimensions of variability are
+              represented uniformly, as labeled branching. So where does the
+              context information come from?
+            </aside>
+          </section>
+          <section>
+            <h2>Another view</h2>
+            <ul>
+              <li>We can envision a tree of contexts</li>
+              <li>Each branch extends the context with a new location or fact</li>
+              <li>All dimensions of variability are uniformly captured</li>
+              <li>Querying a property is equivalent to decorating this tree
+                with key-value pairs</li>
+              <li>So what makes a good tree annotation language?</li>
+            </ul>
+            <p class="fragment"><em>(Hence, an analogy with DOM trees and CSS)</em></p>
+          </section>
+          <section>
+            <h1>Image here</h1>
+          </section>
+        </section>
+        <section>
+          <section>
+            <h2>Capturing context</h2>
+            <ul>
+              <li>CcsContext is everything</li>
+              <li class="fragment">Loading gives a root context</li>
+              <li class="fragment">Contexts can be constrained to give another context</li>
+              <li class="fragment">Contexts can be queried for properties</li>
+            </ul>
+            <aside class="notes">
+              So how do we express this context information? Two-part API:
+              contexts and querying. We do it manually, but it could be done lots
+              of other ways...
+            </aside>
+          </section>
+          <section>
+            <h2>Capturing context</h2>
+            <pre><code class="ccs" data-trim>
+CcsContext config = ... // from wherever
+auto threadCfg = config.constrain("thread", {"TimerFiber"})
+auto componentCfg = threadCfg.constrain("someComponent");
+auto anotherCfg = threadCfg.constrain("anotherThing");
+            </code></pre>
+            <p class="fragment"><em>(It's pretty clear how this results in a tree...)</em></p>
+          </section>
+          <section>
+            <h2>Some code</h2>
+            <pre><code class="cpp" data-trim>
+#include &lt;ccs/ccs.h&gt;
+using namespace ccs;
+using namespace std;
+
+void initWeb(CcsContext config) {
+  config = config.constrain("web");
+  auto host = config.get&lt;string&gt;("host");
+  auto port = config.get&lt;int&gt;("port");
+  connect(host, port);
+}
+            </code></pre>
+            <p class="fragment">This isn't much different than declaring file-
+              or class-specific loggers, and could be further automated when
+              appropriate.</p>
+            <p class="fragment">We use the query API by hand, but of course it
+              could be driven by reflection or whatever, too...</p>
+
+          </section>
+          <section>
+            <p>We also capture context from external sources like initialization
+              scripts, deployment information, etc...</p>
+            <p><strong>This uniformity really pays off!</strong></p>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>More Features</h2>
+            <ul>
+              <li>environment interpolation</li>
+              <li>conjunction, disjunction, descendant</li>
+              <li>nesting sugar</li>
+              <li><code>@context</code></li>
+              <li><code>@import</code></li>
+              <li><code>@constrain</code></li>
+              <li><code>@override</code></li>
+            </ul>
+
+            <aside class="notes">
+              So far, we've seen conjunction and nesting... What else can we say?
+            </aside>
+          </section>
+          <section>
+            <h4>AND/OR</h4>
+            <pre><code class="ccs" data-trim>
+// ABC and DEF share an ID...
+product.ABC, product.DEF : selfMatchPreventionId = 1234567
+product.GHI : selfMatchPreventionId = 7654321
+
+// in either of these environments, this host is special...
+(env.dev, env.lab) host.'sul-chialg56' {
+  useEfVi = true
+}
+            </code></pre>
+        </section>
+        <section>
+          <h4>Sugar</h4>
+          <pre><code class="ccs" data-trim>
+a b c.d : prop = true
+a { c.d : prop = true }
+a b {
+  c.d {
+    prop = true
+  }
+}
+          </code></pre>
+          <pre><code class="ccs" data-trim>
+@context(a b)
+
+c.d : prop = true
+          </code></pre>
+        </section>
+        <section>
+          <h4>@import</h4>
+          <pre><code class="ccs" data-trim>
+@import 'module1.ccs'
+@import 'module2.ccs'
+ // imported only into given context...
+module.timers : @import 'timers.ccs'
+          </code></pre>
+        </section>
+        <section>
+          <h4>@constrain</h4>
+          <pre><code class="ccs" data-trim>
+// Pseudo-env for known overloaded machines to run them with less noise
+env.lab (host.'dev-chi22', host.'dev-chi50',
+    host.'dev-chi65', host.'dev-chi95') {
+  @constrain env.overloaded
+}
+
+someTimeoutMs = 1000
+env.overloaded : someTimeoutMs = 10000
+          </code></pre>
+        </section>
+        <section>
+          <h4>@override</h4>
+          <pre><code class="ccs" data-trim>
+someTimeoutMs = 5000
+thread.this : someTimeoutMs = 1000
+thread.that : someTimeoutMs = 2000
+cpuType.haswell {
+  thread.this : someTimeoutMs = 500
+  thread.that : someTimeoutMs = 800
+}
+// forget all of that in dev...
+env.dev : @override someTimeoutMs = 100000
+          </code></pre>
+        </section>
+      </section>
+        <section>
+            <h2>CCS Doesn't...</h2>
+            <ul>
+                <li>Type checking, beyond a bit of syntax</li>
+                <li>Schema validation or other static checks:
+                    <ol>
+                        <li>Is everything required actually set?</li>
+                        <li>Is everything set actually used?</li>
+                    </ol>
+                </li>
+                <li>Sophisticated aggregate data values (list, maps, regex...)</li>
+                <li>Find usages in your code of a particular property</li>
+                <li>Reloading</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Conclusions</h2>
+            <ul>
+                <li>CCS is awesome!</li>
+                <li><a href="https://github.com/hellige/ccs">https://github.com/hellige/ccs</a></li>
+                <li><a href="https://github.com/hellige/ccs-cpp">https://github.com/hellige/ccs-cpp</a></li>
+            </ul>
+        </section>
+        <section>
+          <section>
+            <h2>Examples</h2>
+            <pre><code class="ccs" data-trim>
+host = "google.com"
+port = 80
+timeout = 1
+env.lab { /* in lab, use this config */
+  host = "lab-web"
+  port = 8080
+}
+// bob likes to use this host
+user.bob : host = "lab-proxy"
+            </code></pre>
+          </section>
+          <section>
+            <h2>Examples</h2>
+            <pre><code class="ccs" data-trim>
+web {
+  host = "google.com"
+  port = 80
+}
+log {
+  host = "localhost"
+  env.lab : host = "lab-log-host"
+  env.prod : host = "prod-log-host"
+  port = 514
+}
+timeout = 1
+// this host is really slow:
+host.'dev-chi22' : timeout = 10
+            </code></pre>
+          </section>
+        </section>
+    </div>
+</div>
+
+<script src="lib/js/head.min.js"></script>
+<script src="js/reveal.js"></script>
+
+<script>
+
+    // Full list of configuration options available at:
+    // https://github.com/hakimel/reveal.js#configuration
+    Reveal.initialize({
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+
+        transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+        // Optional reveal.js plugins
+        dependencies: [
+            {
+                src: 'lib/js/classList.js', condition: function () {
+                return !document.body.classList;
+            }
+            },
+            {
+                src: 'plugin/markdown/marked.js', condition: function () {
+                return !!document.querySelector('[data-markdown]');
+            }
+            },
+            {
+                src: 'plugin/markdown/markdown.js', condition: function () {
+                return !!document.querySelector('[data-markdown]');
+            }
+            },
+            {
+                src: 'plugin/highlight/highlight.js', async: true, condition: function () {
+                return !!document.querySelector('pre code');
+            }, callback: function () {
+                hljs.initHighlightingOnLoad();
+                hljs.registerLanguage("ccs", ccs);
+            }
+            },
+            {src: 'plugin/zoom-js/zoom.js', async: true},
+            {src: 'plugin/notes/notes.js', async: true}
+        ]
+    });
+
+</script>
+
+<script>
+    function ccs(hljs) {
+        console.log(hljs);
+        return {
+            c: [
+                {cN: 'type', b: '[a-zA-Z_]+\\s*(?=[ =])'}, // weird space needed in [= ] to get this to work! and doesn't work without whitespace?
+                {cN: 'keyword', b: '@(constrain|import|override)'},
+                {cN: 'literal', b: '\\b(true|false)\\b'},
+                {cN: 'comment', b: '//', e: '$'},
+                {cN: 'comment', b: '/[*]', e: '[*]/'},
+                {cN: 'literal', b: '"[^"]+"' + "|'[^']+'"},
+                {cN: 'name', b: '[a-zA-Z_]+'},
+                {cN: 'number', b: '-?[0-9]+(\\.[0-9]+)?'},
+            ]
+        };
+    }
+</script>
+</body>
+</html>
