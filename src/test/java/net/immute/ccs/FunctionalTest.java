@@ -106,29 +106,6 @@ public class FunctionalTest {
     }
 
     @Test
-    public void testTrailingCombinator() throws Exception {
-        CcsContext c = load("trailing-combinator.ccs");
-        c = c.constrain("b");
-        c = c.constrain("a");
-        assertEquals("bottom", c.getString("test"));
-
-        CcsContext c2 = c.constrain("e");
-        c2 = c2.constrain("c");
-        c2 = c2.constrain("b");
-        c2 = c2.constrain("d");
-        assertEquals("bottom", c2.getString("test2"));
-    }
-
-    @Test
-    public void testLocalBeatsHeritable() throws Exception {
-        CcsContext c = load("local-beats-heritable.ccs");
-        c = c.constrain("a");
-        assertEquals("local", c.getString("test"));
-        c = c.constrain("b");
-        assertEquals("heritable", c.getString("test"));
-    }
-
-    @Test
     @Ignore
     public void testOrderDependentDisj() throws Exception {
         CcsContext root = load("order-dependent-disj.ccs");
