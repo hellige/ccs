@@ -1,7 +1,7 @@
 package net.immute.ccs;
 
-import net.immute.ccs.impl.parser.Parser2;
-import net.immute.ccs.impl.parser.Parser2.Token.Type;
+import net.immute.ccs.impl.parser.Parser;
+import net.immute.ccs.impl.parser.Parser.Token.Type;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -49,15 +49,15 @@ public class AcceptanceTest {
         return true;
     }
 
-    private String expectTok(Parser2.Lexer lex, Type type) {
-        Parser2.Token tok = lex.consume();
+    private String expectTok(Parser.Lexer lex, Type type) {
+        Parser.Token tok = lex.consume();
         if (tok.type != type)
             fail("Expected token of type " + type + " in test case, but found " + tok);
         return tok.value.toString();
     }
 
     private void parseAssertion(String testName, CcsContext ctx, String line) {
-        Parser2.Lexer lex = new Parser2.Lexer(new StringReader(line));
+        Parser.Lexer lex = new Parser.Lexer(new StringReader(line));
         System.out.println(" Assertion: " + line);
         while (lex.peek().type != Type.EOS) {
             switch (lex.peek().type) {

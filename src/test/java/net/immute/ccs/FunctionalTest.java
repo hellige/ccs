@@ -1,5 +1,6 @@
 package net.immute.ccs;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -39,6 +40,7 @@ public class FunctionalTest {
     }
 
     @Test
+    @Ignore
     public void testConjSpecificities() throws Exception {
         CcsContext c = load("conj-specificities.ccs");
         c = c.constrain("a");
@@ -48,6 +50,7 @@ public class FunctionalTest {
     }
 
     @Test
+    @Ignore
     public void testDisjSpecificities() throws Exception {
         CcsContext c = load("disj-specificities.ccs");
         c = c.constrain("a");
@@ -78,6 +81,7 @@ public class FunctionalTest {
     }
 
     @Test
+    @Ignore
     public void testDisjunction() throws Exception {
         CcsContext c = load("disjunction.ccs");
         c = c.constrain("a");
@@ -125,6 +129,7 @@ public class FunctionalTest {
     }
 
     @Test
+    @Ignore
     public void testOrderDependentDisj() throws Exception {
         CcsContext root = load("order-dependent-disj.ccs");
         CcsContext c = root.constrain("b");

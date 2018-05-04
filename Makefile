@@ -4,11 +4,6 @@ TEST_SRCS := $(shell find src/test/java -name '*.java')
 TEST_CLASSES := $(shell find src/test/java -name '*Test.java' \
                     | sed -e 's:src/test/java/::' -e 's/.java$$//' -e 's:/:.:g')
 
-EMBED_LIBS = \
-  asm-all-3.3.1.jar \
-  parboiled-core-1.0.2.jar \
-  parboiled-java-1.0.2.jar
-
 all: dist
 
 dist: dist/ccs.jar dist/ccs-src.jar
@@ -27,13 +22,7 @@ test: compile
 dist/ccs.jar: compile test
 	rm -f $@
 	mkdir -p `dirname $@`
-	rm -rf classes/tmp
-	cp -r classes/main classes/tmp
-	(cd classes/tmp && for file in $(EMBED_LIBS); do jar xf ../../lib/$$file; done)
-	rm -rf classes/tmp/META-INF
-	jar cf classes/tmp.jar -C classes/tmp .
-	java -jar lib/jarjar-1.1.jar process jarjar.spec classes/tmp.jar $@
-	rm classes/tmp.jar
+	jar cf $@ -C classes/main .
 
 dist/ccs-src.jar: dist/ccs.jar
 	rm -f $@

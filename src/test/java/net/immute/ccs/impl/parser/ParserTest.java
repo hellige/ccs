@@ -10,13 +10,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class ParserTest {
-    private final Parser2 p = new Parser2(new CcsLogger.StderrCcsLogger());
+    private final Parser p = new Parser(new CcsLogger.StderrCcsLogger());
 
     boolean parseString(String str) throws IOException {
         try {
             p.parse(new StringReader(str), "literal");
             return true;
-        } catch (Parser2.ParseError e) {
+        } catch (Parser.ParseError e) {
             return false;
         }
     }

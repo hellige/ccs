@@ -12,7 +12,7 @@ import java.util.Stack;
 
 interface AstRule {
     void addTo(BuildContext buildContext, BuildContext baseContext);
-    boolean resolveImports(ImportResolver importResolver, Parser2 parser, Stack<String> inProgress);
+    boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress);
 
     class Import implements AstRule {
         private final String location;
@@ -30,7 +30,7 @@ interface AstRule {
         }
 
         @Override
-        public boolean resolveImports(ImportResolver importResolver, Parser2 parser, Stack<String> inProgress) {
+        public boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress) {
             if (inProgress.contains(location)) {
                 parser.getLogger().error("Circular import detected involving '" + location + "'");
             } else {
@@ -71,7 +71,7 @@ interface AstRule {
         }
 
         @Override
-        public boolean resolveImports(ImportResolver importResolver, Parser2 parser, Stack<String> inProgress) {
+        public boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress) {
             return true;
         }
     }
@@ -89,7 +89,7 @@ interface AstRule {
         }
 
         @Override
-        public boolean resolveImports(ImportResolver importResolver, Parser2 parser, Stack<String> inProgress) {
+        public boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress) {
             return true;
         }
     }
@@ -119,7 +119,7 @@ interface AstRule {
         }
 
         @Override
-        public boolean resolveImports(ImportResolver importResolver, Parser2 parser, Stack<String> inProgress) {
+        public boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress) {
             for (AstRule rule : rules) if (!rule.resolveImports(importResolver, parser, inProgress)) return false;
             return true;
         }
