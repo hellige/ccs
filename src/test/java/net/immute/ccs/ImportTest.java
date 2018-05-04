@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import static org.junit.Assert.assertEquals;
 
@@ -16,7 +17,7 @@ public class ImportTest {
             }
         };
         return new CcsDomain()
-                .loadCcsStream(resolver.resolve(name), name, resolver)
+                .loadCcsStream(new InputStreamReader(resolver.resolve(name)), name, resolver)
                 .build();
     }
 

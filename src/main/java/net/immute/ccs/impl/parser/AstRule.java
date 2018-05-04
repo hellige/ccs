@@ -5,20 +5,21 @@ import net.immute.ccs.Origin;
 import net.immute.ccs.impl.dag.Key;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-public interface AstRule {
+interface AstRule {
     void addTo(BuildContext buildContext, BuildContext baseContext);
-    boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress);
+    boolean resolveImports(ImportResolver importResolver, Parser2 parser, Stack<String> inProgress);
 
-    public static class Import implements AstRule {
+    class Import implements AstRule {
         private final String location;
 
         private AstRule ast;
 
-        public Import(String location) {
+        Import(String location) {
             this.location = location;
         }
 
@@ -29,13 +30,14 @@ public interface AstRule {
         }
 
         @Override
-        public boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress) {
+        public boolean resolveImports(ImportResolver importResolver, Parser2 parser, Stack<String> inProgress) {
             if (inProgress.contains(location)) {
-                parser.getLogger().error(String.format("Circular import detected involving '" + location + "'"));
+                parser.getLogger().error("Circular import detected involving '" + location + "'");
             } else {
                 inProgress.push(location);
                 try {
-                    ast = parser.parseCcsStream(importResolver.resolve(location), location, importResolver, inProgress);
+                    ast = parser.parseCcsStream(new InputStreamReader(importResolver.resolve(location)), location,
+                                                importResolver, inProgress);
                     if (ast != null) return true;
                 } catch (IOException e) {
                     parser.getLogger().error(String.format("Error loading imported document '%s': %s",
@@ -48,14 +50,14 @@ public interface AstRule {
         }
     }
 
-    public static class PropDef implements AstRule {
+    class PropDef implements AstRule {
         private final String name;
         private final Value<?> value;
         private final Origin origin;
-        private final boolean local;
+        private final boolean local; // TODO remove 'local' support
         private final boolean override;
 
-        public PropDef(String name, Value<?> value, Origin origin, boolean local, boolean override) {
+        PropDef(String name, Value<?> value, Origin origin, boolean local, boolean override) {
             this.name = name;
             this.value = value;
             this.origin = origin;
@@ -64,20 +66,20 @@ public interface AstRule {
         }
 
         @Override
-        public void addTo(BuildContext buildContext, BuildContext _) {
+        public void addTo(BuildContext buildContext, BuildContext baseContext) {
             buildContext.addProperty(name, value, origin, local, override);
         }
 
         @Override
-        public boolean resolveImports(ImportResolver _, Parser __, Stack<String> ___) {
+        public boolean resolveImports(ImportResolver importResolver, Parser2 parser, Stack<String> inProgress) {
             return true;
         }
     }
 
-    public class Constraint implements AstRule {
+    class Constraint implements AstRule {
         private final Key key;
 
-        public Constraint(Key key) {
+        Constraint(Key key) {
             this.key = key;
         }
 
@@ -87,28 +89,27 @@ public interface AstRule {
         }
 
         @Override
-        public boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress) {
+        public boolean resolveImports(ImportResolver importResolver, Parser2 parser, Stack<String> inProgress) {
             return true;
         }
     }
 
-    public static class Nested implements AstRule {
-        private final List<AstRule> rules = new ArrayList<AstRule>();
+    class Nested implements AstRule {
+        private final List<AstRule> rules = new ArrayList<>();
         private SelectorBranch selector;
 
-        public Nested(SelectorBranch selector) {
+        Nested() {}
+
+        Nested(SelectorBranch selector) {
             this.selector = selector;
         }
 
-        // these return boolean for ease of use with parboiled...
-        boolean setSelector(SelectorBranch selector) {
+        void setSelector(SelectorBranch selector) {
             this.selector = selector;
-            return true;
         }
 
-        boolean append(AstRule rule) {
+        void append(AstRule rule) {
             rules.add(rule);
-            return true;
         }
 
         @Override
@@ -118,7 +119,7 @@ public interface AstRule {
         }
 
         @Override
-        public boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress) {
+        public boolean resolveImports(ImportResolver importResolver, Parser2 parser, Stack<String> inProgress) {
             for (AstRule rule : rules) if (!rule.resolveImports(importResolver, parser, inProgress)) return false;
             return true;
         }

@@ -3,12 +3,14 @@ package net.immute.ccs;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import static org.junit.Assert.assertEquals;
 
-public class FunctionalTests {
+public class FunctionalTest {
     private CcsContext load(String name) throws IOException {
-        return new CcsDomain().loadCcsStream(getClass().getResourceAsStream("/" + name), name).build();
+        return new CcsDomain().loadCcsStream(new InputStreamReader(getClass().getResourceAsStream("/" + name)), name)
+                .build();
     }
 
     @Test

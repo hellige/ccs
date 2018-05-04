@@ -8,9 +8,9 @@ import java.util.List;
 
 public abstract class SelectorLeaf {
     abstract Node traverse(BuildContext context);
-    abstract SelectorLeaf descendant(SelectorLeaf pop);
-    abstract SelectorLeaf conjunction(SelectorLeaf pop);
-    abstract SelectorLeaf disjunction(SelectorLeaf pop);
+    abstract SelectorLeaf descendant(SelectorLeaf right);
+    abstract SelectorLeaf conjunction(SelectorLeaf right);
+    abstract SelectorLeaf disjunction(SelectorLeaf right);
 
     public static SelectorLeaf step(final Key key) {
         return new SelectorLeaf() {
