@@ -40,7 +40,6 @@ public class FunctionalTest {
     }
 
     @Test
-    @Ignore
     public void testConjSpecificities() throws Exception {
         CcsContext c = load("conj-specificities.ccs");
         c = c.constrain("a");
@@ -50,7 +49,6 @@ public class FunctionalTest {
     }
 
     @Test
-    @Ignore
     public void testDisjSpecificities() throws Exception {
         CcsContext c = load("disj-specificities.ccs");
         c = c.constrain("a");

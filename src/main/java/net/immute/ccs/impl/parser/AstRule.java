@@ -54,20 +54,18 @@ interface AstRule {
         private final String name;
         private final Value<?> value;
         private final Origin origin;
-        private final boolean local; // TODO remove 'local' support
         private final boolean override;
 
-        PropDef(String name, Value<?> value, Origin origin, boolean local, boolean override) {
+        PropDef(String name, Value<?> value, Origin origin, boolean override) {
             this.name = name;
             this.value = value;
             this.origin = origin;
-            this.local = local;
             this.override = override;
         }
 
         @Override
         public void addTo(BuildContext buildContext, BuildContext baseContext) {
-            buildContext.addProperty(name, value, origin, local, override);
+            buildContext.addProperty(name, value, origin, override);
         }
 
         @Override

@@ -1,10 +1,10 @@
 package net.immute.ccs.impl.dag;
 
-public class Specificity implements Comparable<Specificity> {
+public class Specificity {
     private final int values;
     private final int names;
 
-    public Specificity(int names, int values) {
+    private Specificity(int names, int values) {
         this.names = names;
         this.values = values;
     }
@@ -14,10 +14,11 @@ public class Specificity implements Comparable<Specificity> {
         names = 0;
     }
 
-    public int compareTo(Specificity s) {
-        int result = values - s.values;
-        if (result == 0) result = names - s.names;
-        return result;
+    @SuppressWarnings("RedundantIfStatement")
+    public boolean lessThan(Specificity s) {
+        if (values < s.values) return true;
+        if (values == s.values && names < s.names) return true;
+        return false;
     }
 
     public String toString() {
@@ -28,11 +29,11 @@ public class Specificity implements Comparable<Specificity> {
         return new Specificity(names + s.names, values + s.values);
     }
 
-    public Specificity incNames() {
+    Specificity incNames() {
         return new Specificity(names + 1, values);
     }
 
-    public Specificity incValues() {
+    Specificity incValues() {
         return new Specificity(names, values + 1);
     }
 }

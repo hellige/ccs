@@ -8,6 +8,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
@@ -63,13 +65,12 @@ public class AcceptanceTest {
             switch (lex.peek().type) {
                 case IDENT: {
                     String name = lex.consume().value.toString();
-                    if (lex.peek().type == Type.DOT) {
+                    List<String> values = new ArrayList<>();
+                    while (lex.peek().type == Type.DOT) {
                         lex.consume();
-                        String value = expectTok(lex, Type.IDENT);
-                        ctx = ctx.constrain(name, value);
-                    } else {
-                        ctx = ctx.constrain(name);
+                        values.add(expectTok(lex, Type.IDENT));
                     }
+                    ctx = ctx.constrain(name, values.toArray(new String[values.size()]));
                     break;
                 }
 

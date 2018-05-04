@@ -549,7 +549,7 @@ public class Parser {
                             + "(number, identifier, string, or boolean)");
             }
             advance();
-            return new AstRule.PropDef(name, value, origin, false, override);
+            return new AstRule.PropDef(name, value, origin, override);
         }
 
         private SelectorBranch parseSelector() {

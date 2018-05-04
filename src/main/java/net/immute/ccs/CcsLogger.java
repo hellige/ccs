@@ -1,6 +1,7 @@
 package net.immute.ccs;
 
 public interface CcsLogger {
+    void info(String s);
     void warn(String msg);
     void error(String msg);
     void error(String msg, Throwable e);
@@ -9,6 +10,11 @@ public interface CcsLogger {
         @Override
         public void warn(String msg) {
             System.err.println("WARN: " + msg);
+        }
+
+        @Override
+        public void info(String msg) {
+            System.err.println("INFO: " + msg);
         }
 
         @Override public void error(String msg) {

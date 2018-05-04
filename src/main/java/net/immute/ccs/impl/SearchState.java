@@ -3,61 +3,106 @@ package net.immute.ccs.impl;
 import net.immute.ccs.CcsContext;
 import net.immute.ccs.CcsLogger;
 import net.immute.ccs.CcsProperty;
-import net.immute.ccs.impl.dag.Specificity;
 import net.immute.ccs.impl.dag.Key;
 import net.immute.ccs.impl.dag.Node;
+import net.immute.ccs.impl.dag.Specificity;
 import net.immute.ccs.impl.dag.Tally;
 
-import java.util.*;
-
-import static java.util.Collections.reverseOrder;
-import static java.util.Collections.singleton;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class SearchState {
-    private final SortedMap<Specificity, Set<Node>> nodes = new TreeMap<Specificity, Set<Node>>(reverseOrder());
+    private static class PropertySetting {
+        // we compare these in opposite order, so that the
+        private static final Comparator<CcsProperty> PROP_COMPARATOR =
+                Comparator.comparingInt(CcsProperty::getPropertyNumber);
 
-    private final TallyMap tallyMap;
+        final Specificity spec;
+        final boolean override;
+        final SortedSet<CcsProperty> values = new TreeSet<>(PROP_COMPARATOR);
+
+        PropertySetting(Specificity spec, CcsProperty value) {
+            this.spec = spec;
+            this.override = value.isOverride();
+            values.add(value);
+        }
+
+        PropertySetting(PropertySetting that) {
+            this.spec = that.spec;
+            this.override = that.override;
+            values.addAll(that.values);
+        }
+
+
+        boolean better(PropertySetting that) {
+            if (override && !that.override) return true;
+            if (!override && that.override) return false;
+            return that.spec.lessThan(spec);
+        }
+    }
+
+    private final HashMap<Node, Specificity> nodes = new HashMap<>();
+    // cache of properties newly set in this context
+    private final HashMap<String, PropertySetting> properties = new HashMap<>();
+    private final Map<Tally.AndTally, Tally.TallyState> tallyMap = new HashMap<>();
+
     private final CcsLogger log;
-    private final CcsContext ccsContext;
+    private final CcsContext ccsContext; // TODO i think this should go...
+    private final SearchState parent;
     private final Key key;
-
+    private boolean logAccesses;
     private boolean constraintsChanged;
 
-    private static final Comparator<CcsProperty> PROP_COMPARATOR =
-            new Comparator<CcsProperty>() {
-                public int compare(CcsProperty p1, CcsProperty p2) {
-                    return p1.getPropertyNumber() - p2.getPropertyNumber();
-                }
-            };
-
-    public SearchState(Node root, CcsContext ccsContext, CcsLogger log) {
-        nodes.put(new Specificity(), singleton(root));
-        tallyMap = new TallyMap();
+    public SearchState(Node root, CcsContext ccsContext, CcsLogger log, boolean logAccesses) {
         this.ccsContext = ccsContext;
-        this.key = null;
+        this.parent = null;
+        this.key = new Key();
         this.log = log;
-    }
+        this.logAccesses = logAccesses;
 
-    private SearchState(TallyMap tallyMap, CcsContext ccsContext, Key key, CcsLogger log) {
-        this.tallyMap = tallyMap;
-        this.ccsContext = ccsContext;
-        this.key = key;
-        this.log = log;
-    }
-
-    public SearchState newChild(CcsContext ccsContext, Key key) {
-        return new SearchState(new TallyMap(tallyMap), ccsContext, key, log);
-    }
-
-    public boolean extendWith(SearchState priorState) {
         constraintsChanged = false;
-        for (Map.Entry<Specificity, Set<Node>> entry : priorState.nodes.entrySet())
-            for (Node n : entry.getValue())
-                n.getChildren(key, entry.getKey(), this);
+        Specificity emptySpecificity = new Specificity();
+        root.activate(emptySpecificity, this);
+        while (constraintsChanged) {
+            constraintsChanged = false;
+            root.getChildren(key, emptySpecificity, this);
+        }
+    }
+
+    private SearchState(SearchState parent, CcsContext ccsContext, Key key) {
+        this.ccsContext = ccsContext;
+        this.parent = parent;
+        this.key = key;
+        this.log = parent.log;
+        this.logAccesses = parent.logAccesses;
+    }
+
+    public SearchState newChild(SearchState parent, CcsContext ccsContext, Key key) {
+        SearchState child = new SearchState(this, ccsContext, key);
+        boolean constraintsChanged;
+        do {
+            constraintsChanged = false;
+            SearchState p = parent;
+            while (p != null) {
+                constraintsChanged |= child.extendWith(p);
+                p = p.parent;
+            }
+        } while (constraintsChanged);
+        return child;
+    }
+
+    private boolean extendWith(SearchState priorState) {
+        constraintsChanged = false;
+        for (Map.Entry<Node, Specificity> entry : priorState.nodes.entrySet())
+            entry.getKey().getChildren(key, entry.getValue(), this);
         return constraintsChanged;
     }
 
-    private String origins(List<CcsProperty> values) {
+    private String origins(Collection<CcsProperty> values) {
         StringBuilder b = new StringBuilder();
         boolean first = true;
         for (CcsProperty v : values) {
@@ -68,38 +113,40 @@ public class SearchState {
         return b.toString();
     }
 
-    public CcsProperty findProperty(String propertyName, boolean locals, boolean override) {
-        for (Set<Node> ns : nodes.values()) {
-            List<CcsProperty> values = new ArrayList<CcsProperty>();
-            for (Node n : ns)
-                for (CcsProperty p : n.getProperty(propertyName, locals))
-                    if (p.isOverride() == override)
-                        values.add(p);
-            if (values.size() == 1)
-                return values.get(0);
-            else if (values.size() > 1) {
-                Collections.sort(values, PROP_COMPARATOR);
-                log.warn("Conflict detected for property: " + propertyName
-                        + " in context [" + ccsContext.toString() + "]. "
-                        + "Conflicting settings at: [" + origins(values) + "]. "
-                        + "Using most recent value.");
-                return values.get(values.size()-1);
+    @SuppressWarnings("StringConcatenationInsideStringBufferAppend")
+    public CcsProperty findProperty(String propertyName) {
+        CcsProperty prop = doSearch(propertyName);
+        if (logAccesses) {
+            StringBuilder msg = new StringBuilder();
+            if (prop != null) {
+                msg.append("Found property: " + propertyName
+                        + " = " + prop.getValue() + "\n");
+            } else {
+                msg.append("Property not found: " + propertyName + "\n");
             }
+            msg.append("    in context: [" + ccsContext.toString() + "]");
+            log.info(msg.toString());
         }
-        return null;
+        return prop;
     }
 
-    private Set<Node> getBucket(Specificity spec) {
-        Set<Node> bucket = nodes.get(spec);
-        if (bucket == null) {
-            bucket = new HashSet<Node>();
-            nodes.put(spec, bucket);
+    private CcsProperty doSearch(String propertyName) {
+        PropertySetting props = properties.get(propertyName);
+        if (props == null) {
+            if (parent != null) return parent.doSearch(propertyName);
+            return null;
         }
-        return bucket;
-    }
 
-    public void add(Specificity spec, Node node) {
-        getBucket(spec).add(node);
+        if (props.values.size() > 1) {
+            // more than one value newly set in this node...
+            String msg = ("Conflict detected for property '" + propertyName
+                    + "' in context [" + ccsContext.toString() + "]. "
+                    + "(Conflicting settings at: [" + origins(props.values)
+                    + "].) Using most recent value.");
+            log.warn(msg);
+        }
+
+        return props.values.last();
     }
 
     public String getKey() {
@@ -107,37 +154,71 @@ public class SearchState {
     }
 
     public Tally.TallyState getTallyState(Tally.AndTally tally) {
-        return tallyMap.getTallyState(tally);
+        if (tallyMap.containsKey(tally)) return tallyMap.get(tally);
+        if (parent != null) return parent.getTallyState(tally);
+        return new Tally.TallyState(tally);
+
     }
 
     public void setTallyState(Tally.AndTally tally, Tally.TallyState state) {
-        tallyMap.setTallyState(tally, state);
+        tallyMap.put(tally, state);
     }
 
     public void constrain(Key constraints) {
         constraintsChanged |= key.addAll(constraints);
     }
 
-    private class TallyMap {
-        private final Map<Tally.AndTally, Tally.TallyState> tallies = new HashMap<Tally.AndTally, Tally.TallyState>();
-        private final TallyMap next;
+    public boolean add(Specificity spec, Node node) {
+        Specificity existing = nodes.get(node);
 
-        private TallyMap() {
-            next = null;
+        if (existing == null || existing.lessThan(spec)) {
+            nodes.put(node, spec);
+            return true;
         }
 
-        private TallyMap(TallyMap next) {
-            this.next = next;
+        return false;
+    }
+
+    public void cacheProperty(String propertyName, Specificity spec, CcsProperty property) {
+        PropertySetting setting = properties.get(propertyName);
+
+        PropertySetting newSetting = new PropertySetting(spec, property);
+
+        if (setting == null) {
+            // we don't have a local setting for this yet.
+            PropertySetting parentProperty = parent != null ? parent.checkCache(propertyName) : null;
+            if (parentProperty != null) {
+                if (parentProperty.better(newSetting))
+                    // parent copy found, parent property better, leave local cache empty.
+                    return;
+
+                // copy parent property into local cache. this is done solely to
+                // support conflict detection.
+                setting = new PropertySetting(parentProperty);
+                properties.put(propertyName, setting);
+            }
         }
 
-        public Tally.TallyState getTallyState(Tally.AndTally tally) {
-            if (tallies.containsKey(tally)) return tallies.get(tally);
-            if (next != null) return next.getTallyState(tally);
-            return new Tally.TallyState(tally);
-        }
+        // at this point, 'setting' is pointing to whatever value is currently in properties[propertyName],
+        // or null if there's nothing there.
 
-        public void setTallyState(Tally.AndTally tally, Tally.TallyState state) {
-            tallies.put(tally, state);
+        if (setting == null) {
+            properties.put(propertyName, newSetting);
+        } else if (newSetting.better(setting)) {
+            // new property better than local cache. replace.
+            properties.put(propertyName, newSetting);
+        } else if (setting.better(newSetting)) {
+            // ignore
+        } else {
+            // new property has same specificity/override as existing... append.
+            setting.values.add(property);
         }
+    }
+
+    private PropertySetting checkCache(String propertyName) {
+        PropertySetting setting = properties.get(propertyName);
+        if (setting != null) return setting;
+        if (parent != null) return parent.checkCache(propertyName);
+        return null;
     }
 }

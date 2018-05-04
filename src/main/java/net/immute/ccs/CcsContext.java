@@ -10,12 +10,12 @@ public class CcsContext {
 
     CcsContext(Node root, CcsLogger log) {
         parent = null;
-        searchState = new SearchState(root, this, log);
+        searchState = new SearchState(root, this, log, true); // TODO expose logAccesses
     }
 
     private CcsContext(CcsContext parent, Key key) {
         this.parent = parent;
-        searchState = getSearchState(key);
+        searchState = parent.searchState.newChild(parent.searchState, this, key);
     }
 
     private CcsContext(CcsContext parent, String name, String... values) {
@@ -39,11 +39,11 @@ public class CcsContext {
     }
 
     public boolean hasProperty(String propertyName) {
-        return findProperty(propertyName, true) != null;
+        return getProperty(propertyName) != null;
     }
 
     public CcsProperty getProperty(String propertyName) {
-        return findProperty(propertyName, true);
+        return searchState.findProperty(propertyName);
     }
 
     public String getString(String propertyName) {
@@ -89,41 +89,6 @@ public class CcsContext {
         CcsProperty property = getProperty(propertyName);
         boolean result = property == null ? defaultValue : Boolean.parseBoolean(property.getValue());
         return result;
-    }
-
-    private CcsProperty findProperty(String propertyName, boolean locals, boolean override) {
-        // first, look in nodes newly matched by this pattern...
-        CcsProperty prop = searchState.findProperty(propertyName, locals, override);
-        if (prop != null) return prop;
-
-        // if not, then inherit...
-        if (parent != null) {
-            return parent.findProperty(propertyName, false, override);
-        }
-
-        return null;
-    }
-
-    private CcsProperty findProperty(String propertyName, boolean locals) {
-        CcsProperty prop = findProperty(propertyName, locals, true);
-        if (prop == null) prop = findProperty(propertyName, locals, false);
-        return prop;
-    }
-
-    private SearchState getSearchState(Key key) {
-        SearchState tmp = parent.searchState.newChild(this, key);
-
-        boolean constraintsChanged;
-        do {
-            constraintsChanged = false;
-            CcsContext p = parent;
-            while (p != null) {
-                constraintsChanged |= tmp.extendWith(p.searchState);
-                p = p.parent;
-            }
-        } while (constraintsChanged);
-
-        return tmp;
     }
 
     @Override

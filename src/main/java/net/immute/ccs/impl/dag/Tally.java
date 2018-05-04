@@ -18,6 +18,14 @@ public abstract class Tally {
         return node;
     }
 
+    public int getSize() {
+        return legs.length;
+    }
+
+    public Node getLeg(int i) {
+        return legs[i];
+    }
+
     public static class TallyState {
         private final AndTally tally;
         private final Specificity[] matches;
@@ -41,7 +49,7 @@ public abstract class Tally {
 
             for (int i = 0; i < tally.getSize(); i++) {
                 if (tally.getLeg(i) == leg) { // NB reference equality...
-                    newMatches[i] = matches[i] == null || matches[i].compareTo(spec) < 0 ? spec : matches[i];
+                    newMatches[i] = matches[i] == null || matches[i].lessThan(spec) ? spec : matches[i];
                 } else {
                     newMatches[i] = matches[i];
                     if (matches[i] == null) fullyMatched = false;
@@ -68,14 +76,6 @@ public abstract class Tally {
             searchState.setTallyState(this, state);
             // seems like this could lead to spurious warnings, but see comment below...
             if (state.fullyMatched) node.activate(state.getSpecificity(), searchState);
-        }
-
-        private int getSize() {
-            return legs.length;
-        }
-
-        private Node getLeg(int i) {
-            return legs[i];
         }
     }
 

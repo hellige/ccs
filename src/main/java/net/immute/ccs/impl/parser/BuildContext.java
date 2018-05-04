@@ -7,9 +7,6 @@ import net.immute.ccs.impl.dag.Key;
 import net.immute.ccs.impl.dag.Node;
 import net.immute.ccs.impl.dag.Tally;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public abstract class BuildContext {
     protected final DagBuilder dag;
 
@@ -20,8 +17,8 @@ public abstract class BuildContext {
         this.dag = dag;
     }
 
-    void addProperty(String name, Value value, Origin origin, boolean local, boolean override) {
-        getNode().addProperty(name, new CcsProperty(value.toString(), origin, dag.nextProperty(), override), local);
+    void addProperty(String name, Value value, Origin origin, boolean override) {
+        getNode().addProperty(name, new CcsProperty(value.toString(), origin, dag.nextProperty(), override));
     }
 
     public void addConstraint(Key key) {
@@ -53,30 +50,32 @@ public abstract class BuildContext {
     private static abstract class TallyBuildContext extends BuildContext {
         private final Node firstNode;
         private final BuildContext baseContext;
+        private final Class<?> tallyClass;
 
         abstract protected Tally newTally(Node firstNode, Node secondNode);
 
-        public TallyBuildContext(DagBuilder dag, Node node, BuildContext baseContext) {
+        public TallyBuildContext(DagBuilder dag, Node node, BuildContext baseContext, Class<?> tallyClass) {
             super(dag);
             this.firstNode = node;
             this.baseContext = baseContext;
+            this.tallyClass = tallyClass;
         }
 
         @Override
         public Node traverse(SelectorLeaf selector) {
             Node secondNode = selector.traverse(baseContext);
-            Set<Tally> tallies = new HashSet<Tally>();
-            tallies.addAll(firstNode.getTallies());
-            tallies.retainAll(secondNode.getTallies());
-            assert tallies.isEmpty() || tallies.size() == 1;
-            if (tallies.isEmpty()) {
-                Tally tally = newTally(firstNode, secondNode);
-                firstNode.addTally(tally);
-                secondNode.addTally(tally);
-                return tally.getNode();
-            } else {
-                return tallies.iterator().next().getNode();
-            }
+
+            for (Tally tally : firstNode.getTallies())
+                if (tallyClass.isInstance(tally))
+                    for (int i = 0; i < tally.getSize(); i++)
+                        if (tally.getLeg(i) == secondNode)
+                            return tally.getNode();
+
+            // doesn't exist yet... we need to create it
+            Tally tally = newTally(firstNode, secondNode);
+            firstNode.addTally(tally);
+            secondNode.addTally(tally);
+            return tally.getNode();
         }
 
         @Override
@@ -86,7 +85,7 @@ public abstract class BuildContext {
     }
 
     public BuildContext disjunction(final Node node, final BuildContext baseContext) {
-        return new TallyBuildContext(dag, node, baseContext) {
+        return new TallyBuildContext(dag, node, baseContext, Tally.OrTally.class) {
             @Override
             protected Tally.OrTally newTally(Node firstNode, Node secondNode) {
                 return new Tally.OrTally(new Node(), new Node[] {firstNode, secondNode});
@@ -95,7 +94,7 @@ public abstract class BuildContext {
     }
 
     public BuildContext conjunction(final Node node, final BuildContext baseContext) {
-        return new TallyBuildContext(dag, node, baseContext) {
+        return new TallyBuildContext(dag, node, baseContext, Tally.AndTally.class) {
             @Override
             protected Tally.AndTally newTally(Node firstNode, Node secondNode) {
                 return new Tally.AndTally(new Node(), new Node[] {firstNode, secondNode});
