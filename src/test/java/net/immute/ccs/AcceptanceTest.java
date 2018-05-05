@@ -3,53 +3,85 @@ package net.immute.ccs;
 import net.immute.ccs.impl.parser.Parser;
 import net.immute.ccs.impl.parser.Parser.Token.Type;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+@RunWith(Parameterized.class)
 public class AcceptanceTest {
-    private CcsContext load(String name, String ccs) throws IOException {
-        return new CcsDomain()
-                .loadCcsStream(new StringReader(ccs), "<test case: " + name + ">", new ImportResolver.Null())
-                .build();
+    private final String name;
+    private final String ccs;
+    private final List<String> assertions;
+
+    public AcceptanceTest(String name, String ccs, List<String> assertions) {
+        this.name = name;
+        this.ccs = ccs;
+        this.assertions = assertions;
     }
 
-    private void expect(BufferedReader reader, String expect) throws Exception {
+    private static void expect(BufferedReader reader, String expect) throws Exception {
         assertEquals(expect, reader.readLine());
     }
 
-    private void doUntil(BufferedReader reader, String delim, Consumer<String> f) throws Exception {
+    private static void doUntil(BufferedReader reader, String delim, Consumer<String> f) throws Exception {
         String line;
         while (!(line = reader.readLine()).equals(delim)) // eof will throw an NPE, which is fine
             f.accept(line);
     }
 
-    private String readUntil(BufferedReader reader, String delim) throws Exception {
+    private static String readUntil(BufferedReader reader, String delim) throws Exception {
         StringBuilder result = new StringBuilder();
         doUntil(reader, delim, str -> { result.append(str); result.append("\n"); });
         return result.toString();
     }
 
-    private boolean parseTestCase(BufferedReader reader) throws Exception {
+    private static Object[] parseTestCase(BufferedReader reader) throws Exception {
         String name = reader.readLine();
-        if (name == null) return false;
-        System.out.println("Test case: " + name);
+        if (name == null) return null;
         expect(reader, "---");
         String ccs = readUntil(reader, "---");
+        List<String> assertions = new ArrayList<>();
+        doUntil(reader, "===", assertions::add);
+        expect(reader, "");
+        return new Object[] {name, ccs, assertions};
+    }
+
+    @Parameterized.Parameters(name="{index}: {0}")
+    public static Iterable<Object[]> data() throws Exception {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(
+                AcceptanceTest.class.getResourceAsStream("/tests.txt")));
+        List<Object[]> tests = new ArrayList<>();
+        Object[] test;
+        while ((test = parseTestCase(reader)) != null)
+            tests.add(test);
+        return tests;
+    }
+
+    @Test
+    public void runTest() throws Exception {
+        System.out.println("Test case: " + name);
         System.out.println(" CCS:\n" + ccs + " ---");
         CcsContext root = load(name, ccs);
-        doUntil(reader, "===", line -> parseAssertion(name, root, line));
-        expect(reader, "");
+        for (String assertion : assertions)
+            parseAssertion(name, root, assertion);
         System.out.println("   PASSED\n");
-        return true;
+    }
+
+    private CcsContext load(String name, String ccs) throws IOException {
+        return new CcsDomain()
+                .loadCcsStream(new StringReader(ccs), "<test case: " + name + ">", new ImportResolver.Null())
+                .build();
     }
 
     private String expectTok(Parser.Lexer lex, Type type) {
@@ -116,12 +148,5 @@ public class AcceptanceTest {
                 break;
         }
         assertEquals(msg, val, ctx.getString(name));
-    }
-
-    @Test
-    public void acceptanceTests() throws Exception {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/tests.txt")));
-        //noinspection StatementWithEmptyBody
-        while (parseTestCase(reader));
     }
 }
