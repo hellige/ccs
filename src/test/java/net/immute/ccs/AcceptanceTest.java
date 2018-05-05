@@ -44,6 +44,7 @@ public class AcceptanceTest {
         System.out.println("Test case: " + name);
         expect(reader, "---");
         String ccs = readUntil(reader, "---");
+        System.out.println(" CCS:\n" + ccs + "\n---");
         CcsContext root = load(name, ccs);
         doUntil(reader, "===", line -> parseAssertion(name, root, line));
         expect(reader, "");
@@ -61,26 +62,38 @@ public class AcceptanceTest {
     private void parseAssertion(String testName, CcsContext ctx, String line) {
         Parser.Lexer lex = new Parser.Lexer(new StringReader(line));
         System.out.println(" Assertion: " + line);
+        String msg = "Test case: " + testName + ". Assertion: " + line;
+        CcsContext.Builder builder = ctx.builder();
+        boolean same = true;
         while (lex.peek().type != Type.EOS) {
             switch (lex.peek().type) {
                 case IDENT: {
+                    if (!same) builder = builder.build().builder();
+                    same = false;
                     String name = lex.consume().value.toString();
+                    if (lex.peek().type == Type.EQ) {
+                        // this is a bit of a special case: there's no constraints at all, just a property query on the
+                        // root context
+                        finishAssertion(msg, lex, builder.build(), name);
+                        continue;
+                    }
                     List<String> values = new ArrayList<>();
                     while (lex.peek().type == Type.DOT) {
                         lex.consume();
                         values.add(expectTok(lex, Type.IDENT));
                     }
-                    ctx = ctx.constrain(name, values.toArray(new String[values.size()]));
+                    builder.add(name, values.toArray(new String[values.size()]));
                     break;
                 }
 
+                case SLASH:
+                    same = true;
+                    lex.consume();
+                    break;
+
                 case COLON: {
                     lex.consume();
-                    String name = expectTok(lex, Type.IDENT);
-                    expectTok(lex, Type.EQ);
-                    String val = expectTok(lex, Type.IDENT);
-                    assertEquals("Test case: " + testName + ". Assertion: " + line,
-                                 val, ctx.getString(name));
+                    finishAssertion(msg, lex, builder.build(), expectTok(lex, Type.IDENT));
                     break;
                 }
 
@@ -89,6 +102,20 @@ public class AcceptanceTest {
                 }
             }
         }
+    }
+
+    private void finishAssertion(String msg, Parser.Lexer lex, CcsContext ctx, String name) {
+        expectTok(lex, Type.EQ);
+        String val;
+        switch (lex.peek().type) {
+            case INT:
+                val = expectTok(lex, Type.INT);
+                break;
+            default:
+                val = expectTok(lex, Type.IDENT);
+                break;
+        }
+        assertEquals(msg, val, ctx.getString(name));
     }
 
     @Test

@@ -1,6 +1,4 @@
 a > b, a > b > y.d { test = 'correct1' }
 x.c { test = 'correct2' }
-
-
-f.f > h, g > h { test = 'correct3' }
+a f.f > h b, g > h { test = 'correct3' }
 h.k { test = 'incorrect' }

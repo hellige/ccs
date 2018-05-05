@@ -79,7 +79,6 @@ public class FunctionalTest {
     }
 
     @Test
-    @Ignore
     public void testDisjunction() throws Exception {
         CcsContext c = load("disjunction.ccs");
         c = c.constrain("a");
@@ -104,7 +103,6 @@ public class FunctionalTest {
     }
 
     @Test
-    @Ignore
     public void testOrderDependentDisj() throws Exception {
         CcsContext root = load("order-dependent-disj.ccs");
         CcsContext c = root.constrain("b");
@@ -113,7 +111,7 @@ public class FunctionalTest {
         c = root.constrain("a");
         c = c.constrain("c");
         c = c.constrain("d");
-        assertEquals(1, c.getInt("x"));
+        assertEquals(3, c.getInt("x"));
 
         c = root.constrain("d");
         c = c.constrain("f");

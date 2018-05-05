@@ -8,8 +8,7 @@ public class Key {
 
     // we use a linked map only so that toString() preserves the input order of names. similary,
     // we insist upon linked sets for the names.
-    private final LinkedHashMap<String, LinkedHashSet<String>> values =
-            new LinkedHashMap<String, LinkedHashSet<String>>();
+    private final LinkedHashMap<String, LinkedHashSet<String>> values = new LinkedHashMap<>();
 
     private Specificity specificity = new Specificity();
 
@@ -20,11 +19,13 @@ public class Key {
         for (String value : values) addValue(name, value);
     }
 
-    public void addName(String name) {
+    public boolean addName(String name) {
         if (!values.containsKey(name)) {
-            values.put(name, new LinkedHashSet<String>());
+            values.put(name, new LinkedHashSet<>());
             specificity = specificity.incNames();
+            return true;
         }
+        return false;
     }
 
     public Specificity getSpecificity() {
@@ -37,7 +38,7 @@ public class Key {
         LinkedHashSet<String> vals = values.get(name);
         if (vals == null) {
             changed = true;
-            vals = new LinkedHashSet<String>();
+            vals = new LinkedHashSet<>();
             values.put(name, vals);
             specificity = specificity.incNames();
         }
@@ -54,6 +55,7 @@ public class Key {
     public boolean addAll(Key key) {
         boolean changed = false;
         for (Map.Entry<String, LinkedHashSet<String>> pair : key.values.entrySet()) {
+            changed |= addName(pair.getKey());
             for (String value : pair.getValue())
                 changed |= addValue(pair.getKey(), value);
         }

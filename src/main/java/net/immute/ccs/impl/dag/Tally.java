@@ -85,7 +85,7 @@ public abstract class Tally {
         }
 
         @Override
-        public void activate(Node node, Specificity spec, SearchState searchState) {
+        public void activate(Node leg, Specificity spec, SearchState searchState) {
             // no state for or-joins, just re-activate node with the current specificity
             // it seems that this may allow spurious warnings, if multiple legs of the disjunction match with
             // same specificity. but this is detected in SearchState, where we keep a *set* of nodes for
