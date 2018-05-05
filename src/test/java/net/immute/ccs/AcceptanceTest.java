@@ -44,11 +44,11 @@ public class AcceptanceTest {
         System.out.println("Test case: " + name);
         expect(reader, "---");
         String ccs = readUntil(reader, "---");
-        System.out.println(" CCS:\n" + ccs + "\n---");
+        System.out.println(" CCS:\n" + ccs + " ---");
         CcsContext root = load(name, ccs);
         doUntil(reader, "===", line -> parseAssertion(name, root, line));
         expect(reader, "");
-        System.out.println("   PASSED");
+        System.out.println("   PASSED\n");
         return true;
     }
 
