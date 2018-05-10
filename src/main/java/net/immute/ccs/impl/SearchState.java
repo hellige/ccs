@@ -31,13 +31,6 @@ public class SearchState {
             values.add(value);
         }
 
-        PropertySetting(PropertySetting that) {
-            this.spec = that.spec;
-            this.override = that.override;
-            values.addAll(that.values);
-        }
-
-
         boolean better(PropertySetting that) {
             if (override && !that.override) return true;
             if (!override && that.override) return false;
@@ -46,9 +39,8 @@ public class SearchState {
     }
 
     private final HashMap<Node, Specificity> nodes = new HashMap<>();
-    // cache of properties newly set in this context
-    private final HashMap<String, PropertySetting> properties = new HashMap<>();
-    private final Map<Tally.AndTally, Tally.TallyState> tallyMap = new HashMap<>();
+    private Hamt<String, PropertySetting> properties; // TODO only mutable during construction. refactor to express this
+    private Hamt<Tally.AndTally, Tally.TallyState> tallyMap; // TODO only mutable during construction. refactor to express this
 
     private final CcsLogger log;
     private final CcsContext ccsContext; // TODO i think this should go...
@@ -60,6 +52,8 @@ public class SearchState {
     public SearchState(Node root, CcsContext ccsContext, CcsLogger log, boolean logAccesses) {
         this.ccsContext = ccsContext;
         this.parent = null;
+        this.properties = new Hamt<>();
+        this.tallyMap = new Hamt<>();
         this.key = new Key();
         this.log = log;
         this.logAccesses = logAccesses;
@@ -76,6 +70,8 @@ public class SearchState {
     private SearchState(SearchState parent, CcsContext ccsContext, Key key) {
         this.ccsContext = ccsContext;
         this.parent = parent;
+        this.properties = parent.properties;
+        this.tallyMap = parent.tallyMap;
         this.key = key;
         this.log = parent.log;
         this.logAccesses = parent.logAccesses;
@@ -132,10 +128,7 @@ public class SearchState {
 
     private CcsProperty doSearch(String propertyName) {
         PropertySetting props = properties.get(propertyName);
-        if (props == null) {
-            if (parent != null) return parent.doSearch(propertyName);
-            return null;
-        }
+        if (props == null) return null;
 
         if (props.values.size() > 1) {
             // more than one value newly set in this node...
@@ -153,15 +146,13 @@ public class SearchState {
         return key.toString();
     }
 
-    public Tally.TallyState getTallyState(Tally.AndTally tally) {
-        if (tallyMap.containsKey(tally)) return tallyMap.get(tally);
-        if (parent != null) return parent.getTallyState(tally);
-        return new Tally.TallyState(tally);
-
-    }
-
-    public void setTallyState(Tally.AndTally tally, Tally.TallyState state) {
-        tallyMap.put(tally, state);
+    public Tally.TallyState activateTally(Tally.AndTally tally, Node leg, Specificity spec) {
+        tallyMap = tallyMap.update(tally, state -> {
+            if (state == null)
+                state = new Tally.TallyState(tally);
+            return state.activate(leg, spec);
+        });
+        return tallyMap.get(tally); // TODO avoid second lookup
     }
 
     public void constrain(Key constraints) {
@@ -180,45 +171,18 @@ public class SearchState {
     }
 
     public void cacheProperty(String propertyName, Specificity spec, CcsProperty property) {
-        PropertySetting setting = properties.get(propertyName);
+        properties = properties.update(propertyName, setting -> {
+            PropertySetting newSetting = new PropertySetting(spec, property);
 
-        PropertySetting newSetting = new PropertySetting(spec, property);
+            if (setting == null) return newSetting;
+            if (newSetting.better(setting)) return newSetting;
+            if (setting.better(newSetting)) return setting;
 
-        if (setting == null) {
-            // we don't have a local setting for this yet.
-            PropertySetting parentProperty = parent != null ? parent.checkCache(propertyName) : null;
-            if (parentProperty != null) {
-                if (parentProperty.better(newSetting))
-                    // parent copy found, parent property better, leave local cache empty.
-                    return;
-
-                // copy parent property into local cache. this is done solely to
-                // support conflict detection.
-                setting = new PropertySetting(parentProperty);
-                properties.put(propertyName, setting);
-            }
-        }
-
-        // at this point, 'setting' is pointing to whatever value is currently in properties[propertyName],
-        // or null if there's nothing there.
-
-        if (setting == null) {
-            properties.put(propertyName, newSetting);
-        } else if (newSetting.better(setting)) {
-            // new property better than local cache. replace.
-            properties.put(propertyName, newSetting);
-        } else if (setting.better(newSetting)) {
-            // ignore
-        } else {
-            // new property has same specificity/override as existing... append.
-            setting.values.add(property);
-        }
-    }
-
-    private PropertySetting checkCache(String propertyName) {
-        PropertySetting setting = properties.get(propertyName);
-        if (setting != null) return setting;
-        if (parent != null) return parent.checkCache(propertyName);
-        return null;
+            // new property has same specificity/override... extend the existing settings with this new one
+            // (for conflict reporting). mutate the new setting, because the old one must remain immutable.
+            // TODO make this immutability guaranteed
+            newSetting.values.addAll(setting.values);
+            return newSetting;
+        });
     }
 }

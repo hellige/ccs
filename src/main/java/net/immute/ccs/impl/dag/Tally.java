@@ -43,7 +43,7 @@ public abstract class Tally {
             this.fullyMatched = fullyMatched;
         }
 
-        private TallyState activate(Node leg, Specificity spec) {
+        public TallyState activate(Node leg, Specificity spec) {
             boolean fullyMatched = true;
             Specificity[] newMatches = new Specificity[tally.getSize()];
 
@@ -72,8 +72,7 @@ public abstract class Tally {
 
         @Override
         public void activate(Node leg, Specificity spec, SearchState searchState) {
-            TallyState state = searchState.getTallyState(this).activate(leg, spec);
-            searchState.setTallyState(this, state);
+            TallyState state = searchState.activateTally(this, leg, spec);
             // seems like this could lead to spurious warnings, but see comment below...
             if (state.fullyMatched) node.activate(state.getSpecificity(), searchState);
         }
