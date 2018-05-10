@@ -1,5 +1,6 @@
 package net.immute.ccs.impl;
 
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class Hamt<K, V> {
@@ -28,9 +29,14 @@ public class Hamt<K, V> {
         return this;
     }
 
+    public void forEach(BiConsumer<K, V> f) {
+        root.forEach(f);
+    }
+
     private interface Node<K, V> {
         V find(K key, int hash, int shift);
         Node<K, V> updated(K key, Function<V, V> newValue, int hash, int shift);
+        void forEach(BiConsumer<K, V> f);
     }
 
     private static class TrieNode<K, V> implements Node<K, V> {
@@ -82,6 +88,17 @@ public class Hamt<K, V> {
 
         Node<K, V> nodeAt(final int bitpos) {
             return getNode(nodeIndex(bitpos));
+        }
+
+        @Override
+        public void forEach(BiConsumer<K, V> f) {
+            int dataArity = Integer.bitCount(dataMap);
+            for (int i = 0; i < dataArity; i++)
+                f.accept(getKey(i), getValue(i));
+
+            int nodeArity = Integer.bitCount(nodeMap);
+            for (int i = 0; i < nodeArity; i++)
+                getNode(i).forEach(f);
         }
 
         @Override
@@ -215,6 +232,12 @@ public class Hamt<K, V> {
                 this.hash = hash;
                 this.keys = keys;
                 this.values = values;
+            }
+
+            @Override
+            public void forEach(BiConsumer<K, V> f) {
+                for (int i = 0; i < keys.length; i++)
+                    f.accept(keys[i], values[i]);
             }
 
             @Override

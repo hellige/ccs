@@ -1,17 +1,42 @@
 package net.immute.ccs;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class FunctionalTest {
     private CcsContext load(String name) throws IOException {
         return new CcsDomain().loadCcsStream(new InputStreamReader(getClass().getResourceAsStream("/" + name)), name)
                 .build();
+    }
+
+    private Map<String, CcsProperty> getAllProperties(CcsContext c) {
+        Map<String, CcsProperty> result = new HashMap<>();
+        c.forEachProperty(result::put);
+        return result;
+    }
+
+    @Test
+    public void testEnumeration() throws Exception {
+        CcsContext root = load("order-dependent-disj.ccs");
+        assertTrue(getAllProperties(root).isEmpty());
+
+        final CcsContext c = root.constrain("b");
+        assertEquals(getAllProperties(c), new HashMap<String, CcsProperty>() {{
+            put("x", c.getProperty("x"));
+        }});
+
+        final CcsContext c2 = c.constrain("d").constrain("f");
+        assertEquals(getAllProperties(c2), new HashMap<String, CcsProperty>() {{
+            put("x", c2.getProperty("x"));
+            put("y", c2.getProperty("y"));
+        }});
     }
 
     @Test

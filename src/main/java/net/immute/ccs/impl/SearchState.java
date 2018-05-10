@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.BiConsumer;
 
 public class SearchState {
     private static class PropertySetting {
@@ -184,5 +185,9 @@ public class SearchState {
             newSetting.values.addAll(setting.values);
             return newSetting;
         });
+    }
+
+    public void forEachProperty(BiConsumer<String, CcsProperty> consumer) {
+        properties.forEach((name, setting) -> consumer.accept(name, setting.values.last()));
     }
 }
