@@ -118,10 +118,11 @@ public class SearchState {
             if (prop != null) {
                 msg.append("Found property: " + propertyName
                         + " = " + prop.getValue() + "\n");
+                msg.append("    at " + prop.getOrigin() + " in context: [" + ccsContext.toString() + "]");
             } else {
                 msg.append("Property not found: " + propertyName + "\n");
+                msg.append("    in context: [" + ccsContext.toString() + "]");
             }
-            msg.append("    in context: [" + ccsContext.toString() + "]");
             log.info(msg.toString());
         }
         return prop;

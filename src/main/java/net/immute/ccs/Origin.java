@@ -10,6 +10,6 @@ public class Origin {
     }
 
     public String toString() {
-        return filename + " (line " + lineNum + ")";
+        return filename + ":" + lineNum;
     }
 }

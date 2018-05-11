@@ -11,7 +11,7 @@ dist: dist/ccs.jar dist/ccs-src.jar
 compile:
 	rm -rf classes/main
 	mkdir -p classes/main
-	javac -classpath $(CLASSPATH) -d classes/main $(MAIN_SRCS)
+	javac -source 1.8 -target 1.8 -classpath $(CLASSPATH) -d classes/main $(MAIN_SRCS)
 
 test: compile
 	rm -rf classes/test
