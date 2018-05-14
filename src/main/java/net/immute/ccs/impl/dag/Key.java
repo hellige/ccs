@@ -3,6 +3,7 @@ package net.immute.ccs.impl.dag;
 import java.util.*;
 import java.util.regex.Pattern;
 
+// TODO refactor this to make it much simpler: key-value pair
 public class Key {
     private final static Pattern identRegex = Pattern.compile("^[A-Za-z$_][A-Za-z0-9$_]*$");
 
@@ -14,9 +15,9 @@ public class Key {
 
     public Key() {}
 
-    public Key(String name, String... values) {
+    public Key(String name, String value) {
         addName(name);
-        for (String value : values) addValue(name, value);
+        if (value != null) addValue(name, value);
     }
 
     public boolean addName(String name) {

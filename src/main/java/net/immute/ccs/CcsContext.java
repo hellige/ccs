@@ -1,27 +1,24 @@
 package net.immute.ccs;
 
 import net.immute.ccs.impl.SearchState;
+import net.immute.ccs.impl.dag.Dag;
 import net.immute.ccs.impl.dag.Key;
-import net.immute.ccs.impl.dag.Node;
 
 import java.util.function.BiConsumer;
 
 public class CcsContext {
     private final SearchState searchState;
-    private final CcsContext parent;
 
-    CcsContext(Node root, CcsLogger log, boolean logAccesses) {
-        parent = null;
-        searchState = new SearchState(root, this, log, logAccesses);
+    CcsContext(Dag dag, CcsLogger log, boolean logAccesses) {
+        searchState = new SearchState.Builder(dag, log, logAccesses).build();
     }
 
     private CcsContext(CcsContext parent, Key key) {
-        this.parent = parent;
-        searchState = parent.searchState.newChild(parent.searchState, this, key);
+        searchState = parent.searchState.newChild(key);
     }
 
-    private CcsContext(CcsContext parent, String name, String... values) {
-        this(parent, new Key(name, values));
+    private CcsContext(CcsContext parent, String name, String value) {
+        this(parent, new Key(name, value));
     }
 
     public CcsContext.Builder builder() {
@@ -29,15 +26,11 @@ public class CcsContext {
     }
 
     public CcsContext constrain(String name) {
-        return new CcsContext(this, name);
+        return new CcsContext(this, name, null);
     }
 
-    public CcsContext constrain(String name, String... values) {
-        return new CcsContext(this, name, values);
-    }
-
-    public String getKey() {
-        return searchState.getKey();
+    public CcsContext constrain(String name, String value) {
+        return new CcsContext(this, name, value);
     }
 
     public void forEachProperty(BiConsumer<String, CcsProperty> consumer) {
@@ -99,14 +92,7 @@ public class CcsContext {
 
     @Override
     public String toString() {
-        if (parent != null) {
-            if (parent.parent != null)
-                return parent + " > " + getKey();
-            else
-                return getKey();
-        } else {
-            return "<root>";
-        }
+        return searchState.toString();
     }
 
     public class Builder {

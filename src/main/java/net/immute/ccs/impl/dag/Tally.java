@@ -12,7 +12,7 @@ public abstract class Tally {
         this.node = node;
     }
 
-    public abstract void activate(Node leg, Specificity spec, SearchState searchState);
+    abstract void activate(Node leg, Specificity spec, SearchState.Builder searchState);
 
     public Node getNode() {
         return node;
@@ -28,7 +28,7 @@ public abstract class Tally {
 
     public static class TallyState {
         private final AndTally tally;
-        private final Specificity[] matches;
+        private final Specificity[] matches; // TODO reduce this to just two legs unless we're actually gonna use this generality
         private final boolean fullyMatched;
 
         public TallyState(AndTally tally) {
@@ -71,7 +71,7 @@ public abstract class Tally {
         }
 
         @Override
-        public void activate(Node leg, Specificity spec, SearchState searchState) {
+        public void activate(Node leg, Specificity spec, SearchState.Builder searchState) {
             TallyState state = searchState.activateTally(this, leg, spec);
             // seems like this could lead to spurious warnings, but see comment below...
             if (state.fullyMatched) node.activate(state.getSpecificity(), searchState);
@@ -84,10 +84,10 @@ public abstract class Tally {
         }
 
         @Override
-        public void activate(Node leg, Specificity spec, SearchState searchState) {
+        public void activate(Node leg, Specificity spec, SearchState.Builder searchState) {
             // no state for or-joins, just re-activate node with the current specificity
             // it seems that this may allow spurious warnings, if multiple legs of the disjunction match with
-            // same specificity. but this is detected in SearchState, where we keep a *set* of nodes for
+            // same specificity. but this is detected in SearchState, where we keep a *set* of properties for
             // each specificity, rather than, for example, a *list*.
             node.activate(spec, searchState);
         }

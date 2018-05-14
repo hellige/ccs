@@ -1,17 +1,17 @@
 package net.immute.ccs.impl;
 
-import net.immute.ccs.CcsContext;
 import net.immute.ccs.CcsLogger;
 import net.immute.ccs.CcsProperty;
+import net.immute.ccs.impl.dag.Dag;
 import net.immute.ccs.impl.dag.Key;
 import net.immute.ccs.impl.dag.Node;
 import net.immute.ccs.impl.dag.Specificity;
 import net.immute.ccs.impl.dag.Tally;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Deque;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
@@ -39,64 +39,100 @@ public class SearchState {
         }
     }
 
-    private final HashMap<Node, Specificity> nodes = new HashMap<>();
-    private Hamt<String, PropertySetting> properties; // TODO only mutable during construction. refactor to express this
-    private Hamt<Tally.AndTally, Tally.TallyState> tallyMap; // TODO only mutable during construction. refactor to express this
-
+    private final Dag dag;
+    private final Hamt<String, PropertySetting> properties;
+    private final Hamt<Tally.AndTally, Tally.TallyState> tallyMap;
     private final CcsLogger log;
-    private final CcsContext ccsContext; // TODO i think this should go...
-    private final SearchState parent;
-    private final Key key;
-    private boolean logAccesses;
-    private boolean constraintsChanged;
+    private final boolean logAccesses;
+    private final String description;
 
-    public SearchState(Node root, CcsContext ccsContext, CcsLogger log, boolean logAccesses) {
-        this.ccsContext = ccsContext;
-        this.parent = null;
-        this.properties = new Hamt<>();
-        this.tallyMap = new Hamt<>();
-        this.key = new Key();
-        this.log = log;
-        this.logAccesses = logAccesses;
+    private SearchState(Builder builder) {
+        this.dag = builder.dag;
+        this.properties = builder.properties;
+        this.tallyMap = builder.tallyMap;
+        this.log = builder.log;
+        this.logAccesses = builder.logAccesses;
+        this.description = builder.description.toString();
+    }
 
-        constraintsChanged = false;
-        Specificity emptySpecificity = new Specificity();
-        root.activate(emptySpecificity, this);
-        while (constraintsChanged) {
-            constraintsChanged = false;
-            root.getChildren(key, emptySpecificity, this);
+    public static class Builder {
+        private static final String ROOT_DESCRIPTION = "<root>";
+
+        private final Deque<Key> constraints = new ArrayDeque<>();
+        private final StringBuilder description = new StringBuilder();
+
+        private Hamt<String, PropertySetting> properties;
+        private Hamt<Tally.AndTally, Tally.TallyState> tallyMap;
+
+        private final Dag dag;
+        private final CcsLogger log;
+        private final boolean logAccesses;
+
+        public Builder(Dag dag, CcsLogger log, boolean logAccesses) {
+            properties = new Hamt<>();
+            tallyMap = new Hamt<>();
+            this.dag = dag;
+            this.log = log;
+            this.logAccesses = logAccesses;
+            this.description.append(ROOT_DESCRIPTION);
+            dag.activateRoot(this);
+        }
+
+        Builder(Key key, SearchState parent) {
+            properties = parent.properties;
+            tallyMap = parent.tallyMap;
+            dag = parent.dag;
+            log = parent.log;
+            logAccesses = parent.logAccesses;
+            if (!parent.description.equals(ROOT_DESCRIPTION))
+                description.append(parent.description);
+            constraints.add(key);
+        }
+
+        public SearchState build() {
+            while (!constraints.isEmpty()) {
+                Key key = constraints.pop();
+                if (description.length() > 0) description.append(" > ");
+                description.append(key);
+                dag.traverse(key, this);
+            }
+
+            return new SearchState(this);
+        }
+
+        public void constrain(Key constraint) {
+            constraints.add(constraint);
+        }
+
+        public void addProperty(String propertyName, Specificity spec, CcsProperty property) {
+            properties = properties.update(propertyName, setting -> {
+                PropertySetting newSetting = new PropertySetting(spec, property);
+
+                if (setting == null) return newSetting;
+                if (newSetting.better(setting)) return newSetting;
+                if (setting.better(newSetting)) return setting;
+
+                // new property has same specificity/override... extend the existing settings with this new one
+                // (for conflict reporting). mutate the new setting, because the old one must remain immutable.
+                // TODO make this immutability guaranteed
+                newSetting.values.addAll(setting.values);
+                return newSetting;
+            });
+        }
+
+        public Tally.TallyState activateTally(Tally.AndTally tally, Node leg, Specificity spec) {
+            tallyMap = tallyMap.update(tally, state -> {
+                if (state == null)
+                    state = new Tally.TallyState(tally);
+                return state.activate(leg, spec);
+            });
+            return tallyMap.get(tally); // TODO avoid second lookup
         }
     }
 
-    private SearchState(SearchState parent, CcsContext ccsContext, Key key) {
-        this.ccsContext = ccsContext;
-        this.parent = parent;
-        this.properties = parent.properties;
-        this.tallyMap = parent.tallyMap;
-        this.key = key;
-        this.log = parent.log;
-        this.logAccesses = parent.logAccesses;
-    }
-
-    public SearchState newChild(SearchState parent, CcsContext ccsContext, Key key) {
-        SearchState child = new SearchState(this, ccsContext, key);
-        boolean constraintsChanged;
-        do {
-            constraintsChanged = false;
-            SearchState p = parent;
-            while (p != null) {
-                constraintsChanged |= child.extendWith(p);
-                p = p.parent;
-            }
-        } while (constraintsChanged);
-        return child;
-    }
-
-    private boolean extendWith(SearchState priorState) {
-        constraintsChanged = false;
-        for (Map.Entry<Node, Specificity> entry : priorState.nodes.entrySet())
-            entry.getKey().getChildren(key, entry.getValue(), this);
-        return constraintsChanged;
+    public SearchState newChild(Key key) {
+        Builder builder = new Builder(key, this);
+        return builder.build();
     }
 
     private String origins(Collection<CcsProperty> values) {
@@ -118,10 +154,10 @@ public class SearchState {
             if (prop != null) {
                 msg.append("Found property: " + propertyName
                         + " = " + prop.getValue() + "\n");
-                msg.append("    at " + prop.getOrigin() + " in context: [" + ccsContext.toString() + "]");
+                msg.append("    at " + prop.getOrigin() + " in context: [" + this + "]");
             } else {
                 msg.append("Property not found: " + propertyName + "\n");
-                msg.append("    in context: [" + ccsContext.toString() + "]");
+                msg.append("    in context: [" + this + "]");
             }
             log.info(msg.toString());
         }
@@ -135,7 +171,7 @@ public class SearchState {
         if (props.values.size() > 1) {
             // more than one value newly set in this node...
             String msg = ("Conflict detected for property '" + propertyName
-                    + "' in context [" + ccsContext.toString() + "]. "
+                    + "' in context [" + this + "]. "
                     + "(Conflicting settings at: [" + origins(props.values)
                     + "].) Using most recent value.");
             log.warn(msg);
@@ -144,51 +180,12 @@ public class SearchState {
         return props.values.last();
     }
 
-    public String getKey() {
-        return key.toString();
-    }
-
-    public Tally.TallyState activateTally(Tally.AndTally tally, Node leg, Specificity spec) {
-        tallyMap = tallyMap.update(tally, state -> {
-            if (state == null)
-                state = new Tally.TallyState(tally);
-            return state.activate(leg, spec);
-        });
-        return tallyMap.get(tally); // TODO avoid second lookup
-    }
-
-    public void constrain(Key constraints) {
-        constraintsChanged |= key.addAll(constraints);
-    }
-
-    public boolean add(Specificity spec, Node node) {
-        Specificity existing = nodes.get(node);
-
-        if (existing == null || existing.lessThan(spec)) {
-            nodes.put(node, spec);
-            return true;
-        }
-
-        return false;
-    }
-
-    public void cacheProperty(String propertyName, Specificity spec, CcsProperty property) {
-        properties = properties.update(propertyName, setting -> {
-            PropertySetting newSetting = new PropertySetting(spec, property);
-
-            if (setting == null) return newSetting;
-            if (newSetting.better(setting)) return newSetting;
-            if (setting.better(newSetting)) return setting;
-
-            // new property has same specificity/override... extend the existing settings with this new one
-            // (for conflict reporting). mutate the new setting, because the old one must remain immutable.
-            // TODO make this immutability guaranteed
-            newSetting.values.addAll(setting.values);
-            return newSetting;
-        });
-    }
-
     public void forEachProperty(BiConsumer<String, CcsProperty> consumer) {
         properties.forEach((name, setting) -> consumer.accept(name, setting.values.last()));
+    }
+
+    @Override
+    public String toString() {
+        return description;
     }
 }
