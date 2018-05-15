@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Stack;
 
 interface AstRule {
-    void addTo(BuildContext buildContext, BuildContext baseContext);
+    void addTo(BuildContext buildContext);
     boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress);
 
     class Import implements AstRule {
@@ -24,9 +24,9 @@ interface AstRule {
         }
 
         @Override
-        public void addTo(BuildContext buildContext, BuildContext baseContext) {
+        public void addTo(BuildContext buildContext) {
             assert ast != null;
-            ast.addTo(buildContext, baseContext);
+            ast.addTo(buildContext);
         }
 
         @Override
@@ -64,7 +64,7 @@ interface AstRule {
         }
 
         @Override
-        public void addTo(BuildContext buildContext, BuildContext baseContext) {
+        public void addTo(BuildContext buildContext) {
             buildContext.addProperty(name, value, origin, override);
         }
 
@@ -82,7 +82,7 @@ interface AstRule {
         }
 
         @Override
-        public void addTo(BuildContext buildContext, BuildContext baseContext) {
+        public void addTo(BuildContext buildContext) {
             buildContext.addConstraint(key);
         }
 
@@ -111,9 +111,9 @@ interface AstRule {
         }
 
         @Override
-        public void addTo(BuildContext buildContext, BuildContext baseContext) {
-            if (selector != null) buildContext = selector.traverse(buildContext, baseContext);
-            for (AstRule rule : rules) rule.addTo(buildContext, baseContext);
+        public void addTo(BuildContext buildContext) {
+            if (selector != null) buildContext = selector.traverse(buildContext);
+            for (AstRule rule : rules) rule.addTo(buildContext);
         }
 
         @Override

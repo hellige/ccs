@@ -1,5 +1,6 @@
 package net.immute.ccs.impl.parser;
 
+import net.immute.ccs.impl.dag.Dag;
 import net.immute.ccs.impl.dag.Key;
 import net.immute.ccs.impl.dag.Node;
 
@@ -7,14 +8,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class SelectorLeaf {
-    abstract Node traverse(BuildContext context);
+    abstract Node traverse(Dag dag);
     abstract SelectorLeaf descendant(SelectorLeaf right);
     abstract SelectorLeaf conjunction(SelectorLeaf right);
     abstract SelectorLeaf disjunction(SelectorLeaf right);
 
     public static SelectorLeaf step(final Key key) {
         return new SelectorLeaf() {
-            @Override public Node traverse(BuildContext context) {
+            @Override public Node traverse(Dag dag) {
                 Node node = context.getNode();
                 Node tmpNode = node.getChild(key);
                 if (tmpNode == null) {
@@ -25,7 +26,8 @@ public abstract class SelectorLeaf {
             }
 
             @Override public SelectorLeaf descendant(SelectorLeaf right) {
-                return SelectorLeaf.wrap(SelectorBranch.descendant(this), right);
+                throw new UnsupportedOperationException(); // TODO
+//                return SelectorLeaf.wrap(SelectorBranch.descendant(this), right);
             }
 
             @Override public SelectorLeaf conjunction(SelectorLeaf right) {
@@ -43,9 +45,9 @@ public abstract class SelectorLeaf {
             private final List<SelectorBranch> branches = new ArrayList<SelectorBranch>() {{ add(selector); }};
             private SelectorLeaf right = leaf;
 
-            @Override public Node traverse(BuildContext context) {
+            @Override public Node traverse(Dag dag) {
                 BuildContext tmp = context;
-                for (SelectorBranch branch : branches) tmp = branch.traverse(tmp, context);
+                for (SelectorBranch branch : branches) tmp = branch.traverse(tmp);
                 return tmp.traverse(right);
             }
 
@@ -56,7 +58,8 @@ public abstract class SelectorLeaf {
             }
 
             @Override public SelectorLeaf descendant(SelectorLeaf right) {
-                return push(SelectorBranch.descendant(this.right), right);
+                throw new UnsupportedOperationException(); // TODO
+//                return push(SelectorBranch.descendant(this.right), right);
             }
 
             @Override public SelectorLeaf conjunction(SelectorLeaf right) {

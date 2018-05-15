@@ -26,11 +26,11 @@ public class Parser {
 
     public void loadCcsStream(Reader reader, String fileName, DagBuilder dag, ImportResolver importResolver)
             throws IOException {
-        AstRule rule = parseCcsStream(reader, fileName, importResolver, new Stack<String>());
+        AstRule rule = parseCcsStream(reader, fileName, importResolver, new Stack<>());
         if (rule == null) return;
 
         // everything parsed, no errors. now it's safe to modify the dag...
-        rule.addTo(dag.getBuildContext(), dag.getBuildContext());
+        rule.addTo(dag.getBuildContext());
     }
 
     AstRule.Nested parseCcsStream(Reader stream, String fileName, ImportResolver importResolver,
@@ -555,7 +555,8 @@ public class Parser {
         private SelectorBranch parseSelector() {
             SelectorLeaf leaf = parseSum();
             if (advanceIf(Token.Type.GT)) {
-                return SelectorBranch.descendant(leaf);
+                throw new UnsupportedOperationException(); // TODO
+                //return SelectorBranch.descendant(leaf);
             } else {
                 return SelectorBranch.conjunction(leaf);
             }

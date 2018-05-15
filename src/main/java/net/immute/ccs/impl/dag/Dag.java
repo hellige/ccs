@@ -23,4 +23,8 @@ public class Dag {
     public void activateRoot(SearchState.Builder builder) {
         rootSettings.activate(new Specificity(), builder);
     }
+
+    public Node getRootSettings() {
+        return rootSettings;
+    }
 }

@@ -96,13 +96,20 @@ public class CcsContext {
     }
 
     public class Builder {
-        private final Key key = new Key();
+        private Key key;
 
         private Builder() {}
 
+        // TODO simplify this if it's really no longer allowed. or else find a way to make it sensible
         public Builder add(String name, String... values) {
-            key.addName(name);
-            for (String value : values) key.addValue(name, value);
+            if (key != null)
+                throw new UnsupportedOperationException();
+            if (values.length == 0)
+                key = new Key(name, null);
+            else if (values.length == 1)
+                key = new Key(name, values[0]);
+            else
+                throw new UnsupportedOperationException();
             return this;
         }
 
