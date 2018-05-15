@@ -34,7 +34,7 @@ public class CcsDomain {
     }
 
     public CcsContext build() {
-        return new CcsContext(dag.getRoot(), log, logAccesses);
+        return new CcsContext(dag.build(), log, logAccesses);
     }
 
     public CcsDomain loadCcsFile(String fileName) throws IOException {

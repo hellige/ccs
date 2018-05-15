@@ -9,13 +9,12 @@ public class Key {
 
     private final String name;
     private final String value;
-
-    private Specificity specificity = new Specificity();
+    private final Specificity specificity;
 
     public Key(String name, String value) {
         this.name = name;
         this.value = value;
-        specificity.incNames(); // TODO specificity now ignores value vs. name match. this is an experiment.
+        specificity = new Specificity().incNames(); // TODO specificity now ignores value vs. name match. this is an experiment.
     }
 
     public Specificity getSpecificity() {

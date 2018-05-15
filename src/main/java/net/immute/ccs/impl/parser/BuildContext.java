@@ -24,17 +24,10 @@ public abstract class BuildContext {
 
     // this one's actually a separate class since it's the root. we need to start someplace after all!
     public static class Descendant extends BuildContext {
-        private final Dag dag;
-
-        public Descendant(DagBuilder builder, Dag dag) {
-            super(builder);
-            this.dag = dag;
-        }
-
+        public Descendant(DagBuilder builder) { super(builder); }
         @Override public Node traverse(SelectorLeaf selector) {
-            return selector.traverse(this);
+            return selector.traverse(dag);
         }
-
         @Override public Node getNode() {
             return dag.getRootSettings();
         }
@@ -54,13 +47,13 @@ public abstract class BuildContext {
 
         @Override
         public Node traverse(SelectorLeaf selector) {
-            Node secondNode = selector.traverse(dag.getBuildContext());
+            Node secondNode = selector.traverse(dag);
 
-            for (Tally tally : firstNode.getTallies())
+            for (Tally tally : firstNode.getTallies()) {
                 if (tallyClass.isInstance(tally))
-                    for (int i = 0; i < tally.getSize(); i++)
-                        if (tally.getLeg(i) == secondNode)
-                            return tally.getNode();
+                    if (tally.left == secondNode || tally.right == secondNode)
+                        return tally.getNode();
+            }
 
             // doesn't exist yet... we need to create it
             Tally tally = newTally(firstNode, secondNode);
@@ -79,7 +72,7 @@ public abstract class BuildContext {
         return new TallyBuildContext(dag, node, Tally.OrTally.class) {
             @Override
             protected Tally.OrTally newTally(Node firstNode, Node secondNode) {
-                return new Tally.OrTally(new Node(), new Node[] {firstNode, secondNode});
+                return new Tally.OrTally(new Node(), firstNode, secondNode);
             }
         };
     }
@@ -88,7 +81,7 @@ public abstract class BuildContext {
         return new TallyBuildContext(dag, node, Tally.AndTally.class) {
             @Override
             protected Tally.AndTally newTally(Node firstNode, Node secondNode) {
-                return new Tally.AndTally(new Node(), new Node[] {firstNode, secondNode});
+                return new Tally.AndTally(new Node(), firstNode, secondNode);
             }
         };
     }

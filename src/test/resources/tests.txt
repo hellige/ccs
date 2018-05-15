@@ -1,6 +1,6 @@
 Basic test
 ---
-foo.bar > baz.quux: frob = 'nitz'
+foo.bar baz.quux: frob = 'nitz'
 ---
 foo.bar baz.quux: frob = nitz
 ===
@@ -24,7 +24,7 @@ first second: test = "incorrect"
 first.id second: test = correct
 ===
 
-ID match has greater specificisty
+ID match has greater specificity
 ---
 second.id: test = "correct"
 first second: test = "incorrect"
@@ -34,10 +34,10 @@ first second.id: test = correct
 
 Tied specificities
 ---
-second.class2: test = "foo"
-second.class1: test = "correct"
+first.class1: test = "foo"
+second.class2: test = "correct"
 ---
-first second.class1.class2: test = correct
+first.class1 second.class2: test = correct
 ===
 
 Complex tie

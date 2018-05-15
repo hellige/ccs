@@ -1,0 +1,10 @@
+env.prod {
+    timer.a : prop = a
+    timer.b : prop = b
+}
+
+timer.c env.prod : prop = c
+env timer.d : prop = d
+env.dev timer.a : prop = dev_a
+
+env.test { /* nothing */ }

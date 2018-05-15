@@ -4,12 +4,14 @@ import net.immute.ccs.impl.SearchState;
 
 // note: all comparisons of tallies should be by reference. don't implement equals/hashcode!
 public abstract class Tally {
-    protected final Node[] legs;
-    protected final Node node;
+    final Node node;
+    public final Node left;
+    public final Node right;
 
-    private Tally(Node[] legs, Node node) {
-        this.legs = legs;
+    private Tally(Node node, Node left, Node right) {
         this.node = node;
+        this.left = left;
+        this.right = right;
     }
 
     abstract void activate(Node leg, Specificity spec, SearchState.Builder searchState);
@@ -18,69 +20,61 @@ public abstract class Tally {
         return node;
     }
 
-    public int getSize() {
-        return legs.length;
-    }
-
-    public Node getLeg(int i) {
-        return legs[i];
-    }
-
     public static class TallyState {
         private final AndTally tally;
-        private final Specificity[] matches; // TODO reduce this to just two legs unless we're actually gonna use this generality
-        private final boolean fullyMatched;
+        private final Specificity leftMatch;
+        private final Specificity rightMatch;
 
         public TallyState(AndTally tally) {
             this.tally = tally;
-            this.matches = new Specificity[tally.getSize()];
-            this.fullyMatched = false;
+            this.leftMatch = null;
+            this.rightMatch = null;
         }
 
-        public TallyState(AndTally tally, Specificity[] newSpecs, boolean fullyMatched) {
+        private TallyState(AndTally tally, Specificity leftMatch, Specificity rightMatch) {
             this.tally = tally;
-            this.matches = newSpecs;
-            this.fullyMatched = fullyMatched;
+            this.leftMatch = leftMatch;
+            this.rightMatch = rightMatch;
         }
 
         public TallyState activate(Node leg, Specificity spec) {
-            boolean fullyMatched = true;
-            Specificity[] newMatches = new Specificity[tally.getSize()];
-
-            for (int i = 0; i < tally.getSize(); i++) {
-                if (tally.getLeg(i) == leg) { // NB reference equality...
-                    newMatches[i] = matches[i] == null || matches[i].lessThan(spec) ? spec : matches[i];
-                } else {
-                    newMatches[i] = matches[i];
-                    if (matches[i] == null) fullyMatched = false;
-                }
-            }
-            return new TallyState(tally, newMatches, fullyMatched);
+            Specificity newLeftMatch = leftMatch;
+            if (tally.left == leg && (leftMatch == null || leftMatch.lessThan(spec))) // NB reference equality...
+                newLeftMatch = spec;
+            Specificity newRightMatch = rightMatch;
+            if (tally.right == leg && (rightMatch == null || rightMatch.lessThan(spec))) // NB reference equality...
+                newRightMatch = spec;
+            return new TallyState(tally, newLeftMatch, newRightMatch);
         }
 
         private Specificity getSpecificity() {
             Specificity result = new Specificity();
-            for (Specificity spec : matches) result = result.add(spec);
+            if (leftMatch != null) result = result.add(leftMatch);
+            if (rightMatch != null) result = result.add(rightMatch);
             return result;
+        }
+
+        boolean fullyMatched() {
+            return leftMatch != null && rightMatch != null;
         }
     }
 
     public static class AndTally extends Tally {
-        public AndTally(Node node, Node[] legs) {
-            super(legs, node);
+        public AndTally(Node node, Node left, Node right) {
+            super(node, left, right);
         }
 
         @Override
         public void activate(Node leg, Specificity spec, SearchState.Builder searchState) {
             TallyState state = searchState.activateTally(this, leg, spec);
             // seems like this could lead to spurious warnings, but see comment below...
-            if (state.fullyMatched) node.activate(state.getSpecificity(), searchState);
+            if (state.fullyMatched()) node.activate(state.getSpecificity(), searchState);
         }
     }
 
     public static class OrTally extends Tally {
-        public OrTally(Node node, Node[] legs) {
-            super(legs, node);
+        public OrTally(Node node, Node left, Node right) {
+            super(node, left, right);
         }
 
         @Override

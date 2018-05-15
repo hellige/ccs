@@ -5,6 +5,7 @@ import net.immute.ccs.impl.dag.Dag;
 import net.immute.ccs.impl.dag.Key;
 
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class CcsContext {
     private final SearchState searchState;
@@ -35,6 +36,10 @@ public class CcsContext {
 
     public void forEachProperty(BiConsumer<String, CcsProperty> consumer) {
         searchState.forEachProperty(consumer);
+    }
+
+    public void forEachRule(String name, Consumer<String> consumer) {
+        searchState.forEachRule(name, consumer);
     }
 
     public boolean hasProperty(String propertyName) {

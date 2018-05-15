@@ -4,7 +4,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -19,6 +21,12 @@ public class FunctionalTest {
     private Map<String, CcsProperty> getAllProperties(CcsContext c) {
         Map<String, CcsProperty> result = new HashMap<>();
         c.forEachProperty(result::put);
+        return result;
+    }
+
+    private List<String> getAllRules(String name, CcsContext c) {
+        List<String> result = new ArrayList<>();
+        c.forEachRule(name, result::add);
         return result;
     }
 
@@ -168,5 +176,18 @@ public class FunctionalTest {
         CcsContext root = load("constraints-in-ccs.ccs");
         CcsContext c = root.constrain("a", "b");
         assertEquals("correct", c.getString("test"));
+    }
+
+    @Test
+    public void testRuleEnumeration() throws Exception {
+        CcsContext root = load("rule-enumeration.ccs");
+        assertEquals(getAllRules("timer", root.constrain("env", "prod")),
+                     new ArrayList<String>() {{ add("a"); add("b"); add("c"); add("d"); }});
+        assertEquals(getAllRules("timer", root.constrain("env", "test")),
+                     new ArrayList<String>() {{ add("d"); }});
+        assertEquals(getAllRules("timer", root.constrain("env", "dev")),
+                     new ArrayList<String>() {{ add("a"); add("d"); }});
+        assertEquals(getAllRules("timer", root),
+                     new ArrayList<String>());
     }
 }

@@ -41,4 +41,8 @@ public class Node {
         for (Tally tally : this.tallies)
             tally.activate(this, spec, searchState);
     }
+
+    public boolean trialActivate(Specificity specificity, SearchState searchState) {
+        return false;
+    }
 }

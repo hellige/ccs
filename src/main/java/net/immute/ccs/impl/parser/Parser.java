@@ -611,14 +611,11 @@ public class Parser {
         }
 
         private Key parseSingleStep() {
-            Key key = new Key();
-            do {
-                String name = parseIdent("selector name");
-                key.addName(name);
-                while (advanceIf(Token.Type.DOT))
-                    key.addValue(name, parseIdent("selector value"));
-            } while (advanceIf(Token.Type.SLASH));
-            return key;
+            String name = parseIdent("selector name");
+            String value = null;
+            if (advanceIf(Token.Type.DOT))
+                value = parseIdent("selector value");
+            return new Key(name, value);
         }
 
         private String parseIdent(String what) {

@@ -15,6 +15,7 @@ import java.util.Deque;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class SearchState {
     private static class PropertySetting {
@@ -115,6 +116,7 @@ public class SearchState {
                 // new property has same specificity/override... extend the existing settings with this new one
                 // (for conflict reporting). mutate the new setting, because the old one must remain immutable.
                 // TODO make this immutability guaranteed
+                // TODO don't do this if the new settings are already present in existing setting! breaks ref equality of the map for no real reason!
                 newSetting.values.addAll(setting.values);
                 return newSetting;
             });
@@ -133,6 +135,11 @@ public class SearchState {
     public SearchState newChild(Key key) {
         Builder builder = new Builder(key, this);
         return builder.build();
+    }
+
+    public boolean changesProperties(Key key) {
+        SearchState candidate = newChild(key);
+        return candidate.properties != this.properties; // note: reference equality is plenty here
     }
 
     private String origins(Collection<CcsProperty> values) {
@@ -182,6 +189,11 @@ public class SearchState {
 
     public void forEachProperty(BiConsumer<String, CcsProperty> consumer) {
         properties.forEach((name, setting) -> consumer.accept(name, setting.values.last()));
+    }
+
+    public void forEachRule(String name, Consumer<String> consumer) {
+        // TODO ensure name is not already in current context?
+        dag.forEachRule(name, this, consumer);
     }
 
     @Override

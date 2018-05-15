@@ -1,28 +1,22 @@
 package net.immute.ccs.impl.parser;
 
-import net.immute.ccs.impl.dag.Dag;
+import net.immute.ccs.impl.dag.DagBuilder;
 import net.immute.ccs.impl.dag.Key;
 import net.immute.ccs.impl.dag.Node;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class SelectorLeaf {
-    abstract Node traverse(Dag dag);
+abstract class SelectorLeaf {
+    abstract Node traverse(DagBuilder dag);
     abstract SelectorLeaf descendant(SelectorLeaf right);
     abstract SelectorLeaf conjunction(SelectorLeaf right);
     abstract SelectorLeaf disjunction(SelectorLeaf right);
 
-    public static SelectorLeaf step(final Key key) {
+    static SelectorLeaf step(final Key key) {
         return new SelectorLeaf() {
-            @Override public Node traverse(Dag dag) {
-                Node node = context.getNode();
-                Node tmpNode = node.getChild(key);
-                if (tmpNode == null) {
-                    tmpNode = new Node();
-                    node.addChild(key, tmpNode);
-                }
-                return tmpNode;
+            @Override public Node traverse(DagBuilder dag) {
+                return dag.findOrCreateNode(key);
             }
 
             @Override public SelectorLeaf descendant(SelectorLeaf right) {
@@ -40,13 +34,13 @@ public abstract class SelectorLeaf {
         };
     }
 
-    public static SelectorLeaf wrap(final SelectorBranch selector, final SelectorLeaf leaf) {
+    private static SelectorLeaf wrap(final SelectorBranch selector, final SelectorLeaf leaf) {
         return new SelectorLeaf() {
             private final List<SelectorBranch> branches = new ArrayList<SelectorBranch>() {{ add(selector); }};
             private SelectorLeaf right = leaf;
 
-            @Override public Node traverse(Dag dag) {
-                BuildContext tmp = context;
+            @Override public Node traverse(DagBuilder dag) {
+                BuildContext tmp = dag.getBuildContext();
                 for (SelectorBranch branch : branches) tmp = branch.traverse(tmp);
                 return tmp.traverse(right);
             }
