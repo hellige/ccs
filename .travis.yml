@@ -3,4 +3,3 @@ dist: xenial
 jdk:
   - openjdk8
   - oraclejdk11
-script: make
