@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/hellige/ccs.svg?branch=master)](https://travis-ci.org/hellige/ccs)
+
 CCS is, basically, a config file format and library for configuring programs
 for the JVM. It's inspired by CSS and has similar syntax, but is different in
 a number of important ways and is certainly a distinct language.
