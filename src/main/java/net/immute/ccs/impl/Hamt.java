@@ -3,6 +3,11 @@ package net.immute.ccs.impl;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+/*
+ * This is more or less a simple implementation of CHAMP, described in:
+ *   Optimizing Hash-Array Mapped Tries for Fast and Lean Immutable JVM Collections. Steinforder & Vinju. OOPSLA 2015.
+ *   https://michael.steindorfer.name/publications/oopsla15.pdf
+ */
 public class Hamt<K, V> {
     private static final TrieNode EMPTY_NODE = new TrieNode(0, 0, new Object[0]);
 
