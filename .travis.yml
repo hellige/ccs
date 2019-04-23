@@ -1,5 +1,6 @@
 language: java
+dist: xenial
 jdk:
   - openjdk8
   - oraclejdk11
-script: PATH=$JAVA_HOME:$PATH make
+script: make
