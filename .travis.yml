@@ -3,4 +3,5 @@ dist: xenial
 jdk:
   - openjdk8
   - oraclejdk11
+install: echo "install"
 script: mvn test -B
