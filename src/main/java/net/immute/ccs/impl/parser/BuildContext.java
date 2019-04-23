@@ -65,6 +65,10 @@ public abstract class BuildContext {
         public Node traverse(SelectorLeaf selector) {
             Node secondNode = selector.traverse(baseContext);
 
+            // we've arrived at the same node by two different paths. no tally is
+            // actually needed here...
+            if (firstNode == secondNode) return firstNode;
+
             for (Tally tally : firstNode.getTallies())
                 if (tallyClass.isInstance(tally))
                     for (int i = 0; i < tally.getSize(); i++)
