@@ -3,3 +3,4 @@ dist: xenial
 jdk:
   - openjdk8
   - oraclejdk11
+script: mvn test -B
