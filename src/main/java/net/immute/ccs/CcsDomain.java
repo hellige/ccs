@@ -12,13 +12,15 @@ public class CcsDomain {
     private final DagBuilder dag = new DagBuilder();
 
     private final Parser parser;
-    private final CcsLogger log;
-    private final boolean logAccesses;
+    private final CcsTracer tracer;
+
+    public CcsDomain(CcsTracer tracer) {
+        this.tracer = tracer;
+        parser = new Parser(tracer);
+    }
 
     public CcsDomain(CcsLogger log, boolean logAccesses) {
-        this.log = log;
-        this.logAccesses = logAccesses;
-        parser = new Parser(log);
+        this(new CcsTracer.Logging(log, logAccesses));
     }
 
     public CcsDomain(boolean logAccesses) {
@@ -34,7 +36,7 @@ public class CcsDomain {
     }
 
     public CcsContext build() {
-        return new CcsContext(dag.getRoot(), log, logAccesses);
+        return new CcsContext(dag.getRoot(), tracer);
     }
 
     public CcsDomain loadCcsFile(String fileName) throws IOException {

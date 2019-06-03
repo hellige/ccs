@@ -1,6 +1,6 @@
 package net.immute.ccs.impl.parser;
 
-import net.immute.ccs.CcsLogger;
+import net.immute.ccs.CcsTracer;
 import net.immute.ccs.ImportResolver;
 import net.immute.ccs.Origin;
 import net.immute.ccs.impl.dag.DagBuilder;
@@ -14,14 +14,14 @@ import java.util.Stack;
 import java.util.regex.Pattern;
 
 public class Parser {
-    private final CcsLogger log;
+    private final CcsTracer tracer;
 
-    public Parser(CcsLogger log) {
-        this.log = log;
+    public Parser(CcsTracer tracer) {
+        this.tracer = tracer;
     }
 
-    CcsLogger getLogger() {
-        return log;
+    CcsTracer getTracer() {
+        return tracer;
     }
 
     public void loadCcsStream(Reader reader, String fileName, DagBuilder dag, ImportResolver importResolver)
@@ -40,7 +40,7 @@ public class Parser {
             if (!rule.resolveImports(importResolver, this, inProgress)) return null;
             return rule;
         } catch (ParseError e) {
-            log.error("Errors parsing " + fileName + ":" + e);
+            tracer.onParseError("Errors parsing " + fileName + ":" + e);
             return null;
         }
     }

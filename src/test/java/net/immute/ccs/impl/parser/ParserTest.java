@@ -1,6 +1,7 @@
 package net.immute.ccs.impl.parser;
 
 import net.immute.ccs.CcsLogger;
+import net.immute.ccs.CcsTracer;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -10,7 +11,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class ParserTest {
-    private final Parser p = new Parser(new CcsLogger.StderrCcsLogger());
+    private final Parser p = new Parser(new CcsTracer.Logging(new CcsLogger.StderrCcsLogger(), false));
 
     boolean parseString(String str) throws IOException {
         try {

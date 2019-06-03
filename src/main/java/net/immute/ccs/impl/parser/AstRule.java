@@ -32,7 +32,7 @@ interface AstRule {
         @Override
         public boolean resolveImports(ImportResolver importResolver, Parser parser, Stack<String> inProgress) {
             if (inProgress.contains(location)) {
-                parser.getLogger().error("Circular import detected involving '" + location + "'");
+                parser.getTracer().onParseError("Circular import detected involving '" + location + "'");
             } else {
                 inProgress.push(location);
                 try {
@@ -40,7 +40,7 @@ interface AstRule {
                                                 importResolver, inProgress);
                     if (ast != null) return true;
                 } catch (IOException e) {
-                    parser.getLogger().error(String.format("Error loading imported document '%s': %s",
+                    parser.getTracer().onParseError(String.format("Error loading imported document '%s': %s",
                             location, e.toString()), e);
                 } finally {
                     inProgress.pop();

@@ -8,9 +8,9 @@ public class CcsContext {
     private final SearchState searchState;
     private final CcsContext parent;
 
-    CcsContext(Node root, CcsLogger log, boolean logAccesses) {
+    CcsContext(Node root, CcsTracer tracer) {
         parent = null;
-        searchState = new SearchState(root, this, log, logAccesses);
+        searchState = new SearchState(root, this, tracer);
     }
 
     private CcsContext(CcsContext parent, Key key) {

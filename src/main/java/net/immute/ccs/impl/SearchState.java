@@ -1,14 +1,13 @@
 package net.immute.ccs.impl;
 
 import net.immute.ccs.CcsContext;
-import net.immute.ccs.CcsLogger;
 import net.immute.ccs.CcsProperty;
+import net.immute.ccs.CcsTracer;
 import net.immute.ccs.impl.dag.Key;
 import net.immute.ccs.impl.dag.Node;
 import net.immute.ccs.impl.dag.Specificity;
 import net.immute.ccs.impl.dag.Tally;
 
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,19 +49,17 @@ public class SearchState {
     private final HashMap<String, PropertySetting> properties = new HashMap<>();
     private final Map<Tally.AndTally, Tally.TallyState> tallyMap = new HashMap<>();
 
-    private final CcsLogger log;
+    private final CcsTracer tracer;
     private final CcsContext ccsContext; // TODO i think this should go...
     private final SearchState parent;
     private final Key key;
-    private boolean logAccesses;
     private boolean constraintsChanged;
 
-    public SearchState(Node root, CcsContext ccsContext, CcsLogger log, boolean logAccesses) {
+    public SearchState(Node root, CcsContext ccsContext, CcsTracer tracer) {
         this.ccsContext = ccsContext;
         this.parent = null;
         this.key = new Key();
-        this.log = log;
-        this.logAccesses = logAccesses;
+        this.tracer = tracer;
 
         constraintsChanged = false;
         Specificity emptySpecificity = new Specificity();
@@ -77,8 +74,7 @@ public class SearchState {
         this.ccsContext = ccsContext;
         this.parent = parent;
         this.key = key;
-        this.log = parent.log;
-        this.logAccesses = parent.logAccesses;
+        this.tracer = parent.tracer;
     }
 
     public SearchState newChild(SearchState parent, CcsContext ccsContext, Key key) {
@@ -102,31 +98,13 @@ public class SearchState {
         return constraintsChanged;
     }
 
-    private String origins(Collection<CcsProperty> values) {
-        StringBuilder b = new StringBuilder();
-        boolean first = true;
-        for (CcsProperty v : values) {
-            if (!first) b.append(", ");
-            b.append(v.getOrigin());
-            first = false;
-        }
-        return b.toString();
-    }
-
     @SuppressWarnings("StringConcatenationInsideStringBufferAppend")
     public CcsProperty findProperty(String propertyName) {
         CcsProperty prop = doSearch(propertyName);
-        if (logAccesses) {
-            StringBuilder msg = new StringBuilder();
-            if (prop != null) {
-                msg.append("Found property: " + propertyName
-                        + " = " + prop.getValue() + "\n");
-                msg.append("    at " + prop.getOrigin() + " in context: [" + ccsContext.toString() + "]");
-            } else {
-                msg.append("Property not found: " + propertyName + "\n");
-                msg.append("    in context: [" + ccsContext.toString() + "]");
-            }
-            log.info(msg.toString());
+        if (prop == null) {
+            tracer.onPropertyNotFound(ccsContext, propertyName);
+        } else {
+            tracer.onPropertyFound(ccsContext, propertyName, prop);
         }
         return prop;
     }
@@ -140,11 +118,7 @@ public class SearchState {
 
         if (props.values.size() > 1) {
             // more than one value newly set in this node...
-            String msg = ("Conflict detected for property '" + propertyName
-                    + "' in context [" + ccsContext.toString() + "]. "
-                    + "(Conflicting settings at: [" + origins(props.values)
-                    + "].) Using most recent value.");
-            log.warn(msg);
+            tracer.onConflict(ccsContext, propertyName, props.values);
         }
 
         return props.values.last();
