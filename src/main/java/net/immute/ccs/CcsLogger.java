@@ -6,7 +6,7 @@ public interface CcsLogger {
     void error(String msg);
     void error(String msg, Throwable e);
 
-    public static class StderrCcsLogger implements CcsLogger {
+    class StderrCcsLogger implements CcsLogger {
         @Override
         public void warn(String msg) {
             System.err.println("WARN: " + msg);
