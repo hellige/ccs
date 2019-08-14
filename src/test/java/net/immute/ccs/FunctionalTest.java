@@ -139,4 +139,31 @@ public class FunctionalTest {
         CcsContext c = root.constrain("a", "b");
         assertEquals("correct", c.getString("test"));
     }
+
+    @Test
+    public void testGetLong() throws IOException {
+        CcsContext root = load("types.ccs");
+        long number = root.getLong("number");
+        assertEquals(100L, number);
+    }
+
+    @Test
+    public void testGetLongWithDefault() throws IOException {
+        CcsContext root = load("types.ccs");
+        long number = root.getLong("notPresent", 100L);
+        assertEquals(100L, number);
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void testGetIntExplodes() throws IOException {
+        CcsContext root = load("types.ccs");
+        int number = root.getInt("longNumber");
+    }
+
+    @Test
+    public void testGetLongDoesNotExplode() throws IOException {
+        CcsContext root = load("types.ccs");
+        long number = root.getLong("longNumber");
+        assertEquals(1000000000000L, number);
+    }
 }
