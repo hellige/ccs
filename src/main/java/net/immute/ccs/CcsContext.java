@@ -69,6 +69,15 @@ public class CcsContext {
         return result;
     }
 
+    public long getLong(String properyName) {
+        return Long.parseLong(getString(properyName));
+    }
+
+    public long getLong(String propertyName, long defaultValue) {
+        CcsProperty property= getProperty(propertyName);
+        return property == null ? defaultValue : Long.parseLong(property.getValue());
+    }
+
     public double getDouble(String propertyName) {
         double result = Double.parseDouble(getString(propertyName));
         return result;
