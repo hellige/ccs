@@ -1,4 +1,7 @@
 [![Build Status](https://travis-ci.org/hellige/ccs.svg?branch=master)](https://travis-ci.org/hellige/ccs)
+[![GitHub release](https://img.shields.io/github/v/release/hellige/ccs?include_prereleases&sort=semver)](https://github.com/hellige/ccs/releases)
+[![GitHub license](https://img.shields.io/github/license/hellige/ccs)](https://github.com/hellige/ccs/blob/master/LICENSE)
+
 
 CCS is, basically, a config file format and library for configuring programs
 for the JVM. It's inspired by CSS and has similar syntax, but is different in
