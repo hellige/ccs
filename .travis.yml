@@ -3,7 +3,7 @@ dist: xenial
 jdk:
 - oraclejdk11
 install: "/bin/true"
-script: mvn clean install -q -B
+script: mvn -q -B clean install
 env:
   global:
   - secure: BI0juVGU4zlR6Hhuue/Y5GRHq2EK0V30cvPLahxHH1YQblYi98lQes4/aD9DorFQ8V4nUkD/F9hdnTGiW53fJtlcFzdGG2/bZw0z1Wnx1+xAiWS5bNybiPUNczDcopqYMVUzGSNZsqYHwLL29G02wLfCQnESuEGMgVLbNc9yzSnN6MXVYuRd1/TP5RcYe97Ywq3ypszd4LiX+NhgCWUBmbetSMFafdsqqjnAZVQdR/1OWzCzVnkv2XoOgnny65ynqRGfsMcAmxB0ZzQnLWgQUaUrUNyKhZWS9DU181QILKEn+y/Y/AFznBW4tJdGWmQ/zcIsoyUr93QOPARXu5bo30wp7734zbz3sqpVqSWAZDWOI9EWPJd0Zj1JcKZclXHiIAf4VrkrOkFGuNaqzUSVojjCH7f02sWBvMWkpNTS+yDuTOefz8q1oYYp7WMK4+WW2XbQLq49GV9mslnAO6oqWH3/MfVMuYeiXpFrM0TpdX9ucVAZBTV9gPESPJSRxeueIjuH+HwhExF5lKQEIQNUFr0JO13dGQzBrPvOsg1bTIOHN2RXjdqErVThQBi0pJk+pysppqCx7JZmADV44JR0doe/UCBXDEpsNKC/ejetpWAW+1GH1lHALG0A14qgAysx0DxagqQjvey304BtEQ4VpzTdFzWc5zwSUodB5jjXoL0=
