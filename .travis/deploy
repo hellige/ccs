@@ -36,8 +36,9 @@ gpg --fast-import .travis/gpg.asc
 
 if [[ "${TRAVIS_TAG}" =~ ^v.* ]]
 then
-    echo "on a release tag -> set pom.xml <version> to ${TRAVIS_TAG#v}"
-    mvn -q --settings "${TRAVIS_BUILD_DIR}/.travis/maven-settings.xml" org.codehaus.mojo:versions-maven-plugin:2.1:set -DnewVersion=$TRAVIS_TAG 1>/dev/null 2>/dev/null
+    RELEASE_VERSION="${TRAVIS_TAG#v}"
+    echo "on a release tag -> set pom.xml <version> to $RELEASE_VERSION"
+    mvn -q --settings "${TRAVIS_BUILD_DIR}/.travis/maven-settings.xml" org.codehaus.mojo:versions-maven-plugin:2.1:set -DnewVersion=$RELEASE_VERSION 1>/dev/null 2>/dev/null
 else
     echo "not on a release tag -> keep snapshot version in pom.xml"
 fi
