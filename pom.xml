@@ -5,7 +5,7 @@
     <artifactId>ccs</artifactId>
     <packaging>jar</packaging>
 
-    <version>0.9.4-SNAPSHOT</version>
+    <version>0.9.7-SNAPSHOT</version>
     <name>CCS</name>
     <url>https://github.com/hellige/ccs</url>
 
