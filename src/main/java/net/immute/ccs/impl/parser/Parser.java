@@ -132,8 +132,8 @@ public class Parser {
                 case IDENT: return "identifier";
                 case NUMID: return "numeric/identifier";
                 case STRING: return "string literal";
+                default: throw new NoSuchElementException("Unknown token type: " + type);
             }
-            throw new NoSuchElementException("Unknown token type: " + type);
         }
     }
 
@@ -228,6 +228,7 @@ public class Parser {
                 }
                 case '\'': return string(c, where);
                 case '"': return string(c, where);
+                default: // fall through
             }
 
             if (numIdInitChar(c)) return numId(c, where);
@@ -307,8 +308,8 @@ public class Parser {
                         while (stream.peek() != '}') {
                             if (!interpolantChar(stream.peek()))
                                 throw new ParseError(stream.peekLocation(),
-                                                     "Character not allowed in string interpolant: '" +
-                                                             (char)stream.peek() + "' (0x" + Integer.toHexString(stream.peek())
+                                                     "Character not allowed in string interpolant: '"
+                                                             + (char)stream.peek() + "' (0x" + Integer.toHexString(stream.peek())
                                                              + ")");
                             interpolant.append((char)stream.get());
                         }
@@ -515,6 +516,7 @@ public class Parser {
                         return true;
                     }
                     break;
+                default: // fall through
             }
             return false;
         }

@@ -1,10 +1,12 @@
 package net.immute.ccs.impl.dag;
 
-import java.util.*;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.regex.Pattern;
 
 public class Key {
-    private final static Pattern identRegex = Pattern.compile("^[A-Za-z$_][A-Za-z0-9$_]*$");
+    private static final Pattern IDENT_REGEX = Pattern.compile("^[A-Za-z$_][A-Za-z0-9$_]*$");
 
     // we use a linked map only so that toString() preserves the input order of names. similary,
     // we insist upon linked sets for the names.
@@ -86,7 +88,7 @@ public class Key {
             if (!first) result.append('/');
             result.append(pair.getKey());
             for (String v : pair.getValue()) {
-                if (identRegex.matcher(v).matches())
+                if (IDENT_REGEX.matcher(v).matches())
                     result.append('.').append(v);
                 else
                     result.append(".'").append(v.replace("'", "\\'")).append('\'');

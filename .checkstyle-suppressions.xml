@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE suppressions PUBLIC
+        "-//Puppy Crawl//DTD Suppressions 1.0//EN"
+        "http://www.puppycrawl.com/dtds/suppressions_1_0.dtd">
+
+<suppressions>
+    <suppress files=".*.java" checks="HiddenField"/>
+    <suppress files=".*.java" checks="FinalParameters"/>
+    <suppress files=".*.java" checks="FinalClass"/>
+    <suppress files=".*.java" checks="DesignForExtension"/>
+    <suppress files=".*.java" checks="MagicNumber"/>
+    <suppress files=".*.java" checks="EmptyStatement"/>
+    <suppress files=".*.java" checks="EmptyBlock"/>
+    <suppress files=".*.java" checks="AvoidNestedBlocks"/>
+    <suppress files=".*.java" checks="VisibilityModifier"/>
+
+    <!-- javadoc -->
+    <suppress files=".*.java" checks="JavadocType"/>
+    <suppress files=".*.java" checks="JavadocMethod"/>
+    <suppress files=".*.java" checks="JavadocVariable"/>
+    <suppress files=".*.java" checks="JavadocPackage"/>
+
+    <!-- formatting -->
+    <suppress files=".*.java" checks="LineLength"/>
+    <suppress files=".*.java" checks="NeedBraces"/>
+    <suppress files=".*.java" checks="WhitespaceAround"/>
+    <suppress files=".*.java" checks="WhitespaceAfter"/>
+    <suppress files=".*.java" checks="LeftCurly"/>
+    <suppress files=".*.java" checks="AvoidInlineConditionals"/>
+
+    <!--
+    <suppress files=".*.java" checks="EmptyBlock"/>
+    <suppress files=".*.java" checks="RedundantThrows"/>
+-->
+</suppressions>

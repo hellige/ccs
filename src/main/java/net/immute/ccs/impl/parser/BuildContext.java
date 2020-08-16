@@ -10,8 +10,8 @@ import net.immute.ccs.impl.dag.Tally;
 public abstract class BuildContext {
     protected final DagBuilder dag;
 
-    abstract public Node traverse(SelectorLeaf selector);
-    abstract public Node getNode();
+    public abstract Node traverse(SelectorLeaf selector);
+    public abstract Node getNode();
 
     public BuildContext(DagBuilder dag) {
         this.dag = dag;
@@ -47,12 +47,12 @@ public abstract class BuildContext {
         }
     }
 
-    private static abstract class TallyBuildContext extends BuildContext {
+    private abstract static class TallyBuildContext extends BuildContext {
         private final Node firstNode;
         private final BuildContext baseContext;
         private final Class<?> tallyClass;
 
-        abstract protected Tally newTally(Node firstNode, Node secondNode);
+        protected abstract Tally newTally(Node firstNode, Node secondNode);
 
         public TallyBuildContext(DagBuilder dag, Node node, BuildContext baseContext, Class<?> tallyClass) {
             super(dag);

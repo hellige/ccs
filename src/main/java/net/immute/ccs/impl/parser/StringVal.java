@@ -3,7 +3,7 @@ package net.immute.ccs.impl.parser;
 import java.util.ArrayList;
 
 public class StringVal {
-    private static interface StringElem {
+    private interface StringElem {
         String interpolate();
     }
 

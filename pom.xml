@@ -62,7 +62,6 @@
                 </configuration>
             </plugin>
 
-            <!-- TODO
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -79,17 +78,16 @@
                         <configuration>
                             <consoleOutput>true</consoleOutput>
                             <logViolationsToConsole>true</logViolationsToConsole>
-                            <failOnViolation>false</failOnViolation>
+                            <!--<failOnViolation>false</failOnViolation>-->
                             <linkXRef>true</linkXRef>
-                            <maxAllowedViolations>10</maxAllowedViolations>
-                            <suppressionsLocation>${project.basedir}/src/test/resources/checkstyle-suppressions.xml</suppressionsLocation>
+                            <!--<maxAllowedViolations>10</maxAllowedViolations>-->
+                            <suppressionsLocation>${project.basedir}/.checkstyle-suppressions.xml</suppressionsLocation>
                             <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
                             <outputFileFormat>xml</outputFileFormat>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-            -->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
