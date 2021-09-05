@@ -22,7 +22,7 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
       - name: Rewrite version for release
         if: ${{ github.event_name == 'release' }}
-        run:
+        run: |
           RELEASE_VERSION="${RELEASE_TAG#v}"
           echo "running for release -> set pom.xml <version> to $RELEASE_VERSION"
           mvn -q versions:set -DnewVersion="$RELEASE_VERSION"
