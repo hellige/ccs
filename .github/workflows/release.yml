@@ -2,7 +2,7 @@ name: Publish package to the Maven Central Repository
 
 on:
   release:
-    types: [created]
+    types: [published]
   workflow_dispatch:
 
 jobs:
@@ -20,6 +20,14 @@ jobs:
           server-password: OSSRH_PASSWORD
           gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Rewrite version for release
+        if: ${{ github.event_name == 'release' }}
+        run:
+          RELEASE_VERSION="${RELEASE_TAG#v}"
+          echo "running for release -> set pom.xml <version> to $RELEASE_VERSION"
+          mvn -q versions:set -DnewVersion="$RELEASE_VERSION"
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
       - name: Publish package
         run: mvn -q -B -P publish deploy
         env:
